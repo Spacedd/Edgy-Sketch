@@ -1,0 +1,9 @@
+{
+  "name": "EdgySketch",
+  "version": "0.0.1",
+  "start":  "node server.js"
+  
+}
+
+
+
