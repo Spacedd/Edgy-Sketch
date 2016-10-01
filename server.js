@@ -1,19 +1,22 @@
-//loads the package http
+//loads the packages needed
 var http = require('http');
+var express = require('express');
+var app = express();
+var favicon = require('serve-favicon');
+
+//uses app to send the request to the file index.html
+app.get('/', function(req,res) {
+	res.sendFile(__dirname + "\\index.html");
+});
+
+app.use(favicon(__dirname + "\\claypepe.png"));
 
 //says what port to listen to incoming data on
-const PORT=8080; 
+const PORT=80; 
 
-//if a request comes in, respond with message
-function handleRequest(request, response){
-    response.end('It Works!! Path Hit: ' + request.url);
-}
-
-//uses http function to create server which passes in handlerequest 
-var server = http.createServer(handleRequest);
-
-//listens on the server port and calls function
-server.listen(PORT, function(){
-    //if the server runs, log that it is listening
-    console.log("Server listening on: http://localhost:%s", PORT);
+//when the app listens it logs where it is listening to
+app.listen(PORT, function() {
+	console.log("Listening on port ", PORT);
 });
+
+

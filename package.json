@@ -1,9 +1,24 @@
 {
-  "name": "EdgySketch",
-  "version": "0.0.1",
-  "start":  "node server.js"
-  
+  "name": "edgysketch",
+  "version": "1.0.0",
+  "description": "A2 computing project",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.14.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jammywebdaniel/Edgy-Sketch.git"
+  },
+  "author": "Daniel Hammond",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jammywebdaniel/Edgy-Sketch/issues"
+  },
+  "homepage": "https://github.com/jammywebdaniel/Edgy-Sketch#readme"
 }
-
-
-
