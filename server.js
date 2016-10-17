@@ -1,10 +1,11 @@
 //loads the packages needed
-var http = require('http');
 var express = require('express');
 var app = express();
+var http = require('http').Server(app);
 var favicon = require('serve-favicon');
 var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
+var io = require('socket.io')(http);
 
 
 // Says what port to listen to incoming data on
@@ -41,7 +42,7 @@ passport.deserializeUser(function(obj, cb) {
 // logging, parsing, and session handling.
 app.use(require('morgan')('combined'));
 app.use(require('cookie-parser')());
-app.use(require('body-parser').urlencoded({ extended: true }));
+//app.use(require('body-parser').urlencoded({ extended: true }));
 app.use(require('express-session')({ secret: 'edgysketch', resave: true, saveUninitialized: true }));
 
 // Initialize Passport and restore authentication state, if any, from the session.
@@ -50,12 +51,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-
-
 // Uses app to send the request to the file login.html
 
 app.get('/', function(req,res) {
-	res.sendFile(__dirname + "\\login.html");
+	res.sendFile(__dirname + "\\game.html");
 });
 
 
@@ -64,6 +63,11 @@ app.get('/', function(req,res) {
 app.get('/login/facebook',
 	passport.authenticate('facebook'));
 
+app.get('/login/guest',
+	function(req, res){
+		res.redirect('/game');
+	});
+
 app.get('/login/facebook/return',
 	passport.authenticate('facebook', { failureRedirect: '/' }),
 	function(req, res) {
@@ -71,12 +75,21 @@ app.get('/login/facebook/return',
 		res.redirect('/index');
 	});
 
+
+
 // Takes them to index if there is a successful login
 
 app.get('/index',function(req,res) {
 	res.send("Hello " + req.user.displayName);
 });
 
+app.get('/game',function(req,res) {
+	res.sendFile(__dirname + "\\game.html");
+});
+
+app.get('/game.js',function(req,res) {
+	res.sendFile(__dirname + "\\game.js");
+});
 
 // Enables the icon
 
@@ -85,9 +98,19 @@ app.use(favicon(__dirname + "\\claypepe.png"));
 
 // When the app listens it logs where it is listening to
 
-app.listen(PORT, function() {
-	console.log("Listening on port ", PORT);
+io.on('connection', function(socket) {
+	console.log("User connected");
+	socket.on('disconnect', function(){
+		console.log('User disconnected');
+	});
+	socket.on('Enter', function(){
+		console.log("Enter pressed");
+	});
+
 });
 
+http.listen(PORT, function() {
+	console.log("Listening on port ", PORT);
+});
 
 
