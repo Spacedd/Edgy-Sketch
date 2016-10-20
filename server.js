@@ -100,17 +100,20 @@ app.use(favicon(__dirname + "\\claypepe.png"));
 
 io.on('connection', function(socket) {
 	console.log("User connected");
+	io.emit('chat message', "User connected");
 	socket.on('disconnect', function(){
 		console.log('User disconnected');
+		io.emit('chat message', "User disconnected");
 	});
 	socket.on('Enter', function(){
 		console.log("Enter pressed");
 	});
-
+	socket.on('chat message', function(msg) {
+		console.log("message: " + msg)
+		io.emit('chat message', msg);
+	})
 });
 
 http.listen(PORT, function() {
 	console.log("Listening on port ", PORT);
 });
-
-
