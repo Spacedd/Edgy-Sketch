@@ -1,4 +1,5 @@
 //loads the packages needed
+
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
@@ -38,8 +39,8 @@ passport.deserializeUser(function(obj, cb) {
 });
 
 
-// Use application-level middleware for common functionality, including
-// logging, parsing, and session handling.
+// Use application-level middleware for common functionality, including logging, parsing, and session handling.
+
 app.use(require('morgan')('combined'));
 app.use(require('cookie-parser')());
 //app.use(require('body-parser').urlencoded({ extended: true }));
@@ -54,7 +55,7 @@ app.use(passport.session());
 // Uses app to send the request to the file login.html
 
 app.get('/', function(req,res) {
-	res.sendFile(__dirname + "\\game.html");
+	res.sendFile(__dirname + "\\login.html");
 });
 
 
@@ -72,16 +73,15 @@ app.get('/login/facebook/return',
 	passport.authenticate('facebook', { failureRedirect: '/' }),
 	function(req, res) {
 		console.log("Successful login");
-		res.redirect('/index');
+		res.redirect('/game');
 	});
 
 
 
 // Takes them to index if there is a successful login
 
-app.get('/index',function(req,res) {
-	res.send("Hello " + req.user.displayName);
-});
+//req.user.displayName <--------- HOW TO GET FACEBOOK NAME
+
 
 app.get('/game',function(req,res) {
 	res.sendFile(__dirname + "\\game.html");
@@ -91,7 +91,7 @@ app.get('/game.js',function(req,res) {
 	res.sendFile(__dirname + "\\game.js");
 });
 
-// Enables the icon
+// Enables the page logo
 
 app.use(favicon(__dirname + "\\claypepe.png"));
 
@@ -108,10 +108,16 @@ io.on('connection', function(socket) {
 	socket.on('Enter', function(){
 		console.log("Enter pressed");
 	});
-	socket.on('chat message', function(msg) {
-		console.log("message: " + msg)
-		io.emit('chat message', msg);
+	socket.on('chat message', function(msg, name) {
+		console.log("message: " + msg);
+		io.emit('chat message', name + ": " + msg);
 	})
+	socket.on('draw', function(msg){
+		console.log(msg);
+		io.emit('draw', msg);
+	})
+	
+	
 });
 
 http.listen(PORT, function() {
