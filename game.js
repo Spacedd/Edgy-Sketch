@@ -38,6 +38,7 @@ $(function(){
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
 
+
 // Variable which later decides whether to draw or not
     var ismousedown = false;
 
@@ -87,11 +88,25 @@ $(function(){
         return false;
     });
 
+//  Replaces the canvas with a white rectangle, aka clearing it
+   ctx.clear = function () {
+       ctx.clearRect(0, 0, c.width, c.height);
+   };
+
+// When the button "clear" is pressed, it calls the socket 'clear'
+   $('#clearbutton').on('click',function(){
+       socket.emit('clear');
+   });
+
+// Calls the clear function when it receives the call from the server
+   socket.on('clear', function(){
+       ctx.clear();
+   });
+
+
 // Outputs the latest message
-    socket.on('chat message', function(msg) {
+   socket.on('chat message', function(msg) {
         $('#messages').append($('<ul>').text(msg))
-    });
-
-
+   });
 
 });
