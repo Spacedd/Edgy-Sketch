@@ -7,6 +7,7 @@ var favicon = require('serve-favicon');
 var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
 var io = require('socket.io')(http);
+var mustacheExpress = require('mustache-express');
 
 
 // Says what port to listen to incoming data on
@@ -51,6 +52,9 @@ app.use(require('express-session')({ secret: 'edgysketch', resave: true, saveUni
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.engine('html', mustacheExpress());
+app.set('view engine', 'html');
+app.set('views', __dirname);
 
 // Uses app to send the request to the file login.html
 
@@ -66,14 +70,15 @@ app.get('/login/facebook',
 
 app.get('/login/guest',
 	function(req, res){
-		res.redirect('/game');
+		res.render('game.html', {username: "Guest"} );
+		
 	});
 
 app.get('/login/facebook/return',
 	passport.authenticate('facebook', { failureRedirect: '/' }),
 	function(req, res) {
 		console.log("Successful login");
-		res.redirect('/game');
+		res.render('game.html', {username: req.user.displayName } );
 	});
 
 
@@ -95,6 +100,10 @@ app.get('/game.js',function(req,res) {
 
 app.use(favicon(__dirname + "\\claypepe.png"));
 
+app.get('/login/brush.cur', function(req, res){
+	res.sendFile(__dirname + "\\brush.cur");
+});
+
 
 // When the app listens it logs where it is listening to
 
@@ -108,16 +117,22 @@ io.on('connection', function(socket) {
 	socket.on('Enter', function(){
 		console.log("Enter pressed");
 	});
-	socket.on('chat message', function(msg, name) {
+	socket.on('chat message', function(msg) {
 		console.log("message: " + msg);
-		io.emit('chat message', name + ": " + msg);
-	})
+		io.emit('chat message', msg);
+	});
 	socket.on('draw', function(msg){
 		console.log(msg);
 		io.emit('draw', msg);
-	})
-	
-	
+	});
+	socket.on('clear', function(){
+		console.log("Clearing canvas");
+		io.emit('clear');
+	});
+	socket.on('nickname', function(msg) {
+		console.log("Nickname changed to: " + msg);
+		io.emit('nickname', msg);
+	});
 });
 
 http.listen(PORT, function() {
