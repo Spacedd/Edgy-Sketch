@@ -17,9 +17,21 @@ const PORT=80;
 
 // Setup facebook login strategy
 
+var clientId = process.env.CLIENT_ID;
+var clientSecret = process.env.CLIENT_SECRET;
+
+// if Facebook env vars not set - then use blanks
+if(clientId == null) {
+	clientId = "blankId";
+}
+
+if(clientSecret == null) {
+	console.log(clientSecret);
+}
+
 passport.use(new Strategy({
-	clientID: process.env.CLIENT_ID,
-	clientSecret: process.env.CLIENT_SECRET,
+	clientID: clientId,
+	clientSecret: clientSecret,
 	callbackURL: 'http://edgysketch.ddns.net/login/facebook/return'
 	},
 	function(accessToken, refreshToken, profile, cb){
