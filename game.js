@@ -17,11 +17,33 @@ $(function () {
     ctx.lineWidth = 5;
     ctx.lineCap = "round";
 
+
+
+
 // Adds the listeners for the canvas for when the mouse goes up, down or just moves
     c.addEventListener("mousedown", doMouseDown, false);
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
+    $("#erases").on('click', function() {
+      ctx.strokeStyle = "#ffffff"
+    });
+    $("#penmode").on('click', function() {
+      ctx.strokeStyle = "#000000"
+    });
 
+    $("#sliderPen").slider({
+      orientation: "horizontal",
+      range: "min",
+      max: 20,
+      value: 5,
+      slide: refreshSize,
+      change: refreshSize
+    });
+
+    function refreshSize(){
+      var penWidth = $("#sliderPen").slider("value");
+      ctx.lineWidth = penWidth;
+    };
 
 // Variable which later decides whether to draw or not
     var ismousedown = false;
@@ -31,7 +53,6 @@ $(function () {
         ismousedown = true;
         startX = event.pageX - ctx.canvas.offsetLeft;
         startY = event.pageY - ctx.canvas.offsetTop;
-
     }
 
 // Grabs the x and y coordinates of the mouseup position and then sends an emit to the function draw
@@ -64,6 +85,21 @@ $(function () {
         old = msg;
     });
 
+//  Replaces the canvas with a white rectangle, aka clearing it
+    ctx.clear = function () {
+        ctx.clearRect(0, 0, c.width, c.height);
+    };
+
+// When the button "clear" is pressed, it calls the socket 'clear'
+    $('#clearbutton').on('click', function () {
+        socket.emit('clear');
+    });
+
+// Calls the clear function when it receives the call from the server
+    socket.on('clear', function () {
+        ctx.clear();
+    });
+
 // Validates the message, then sets the contents to blank after it has been sent
     $('#sendmessage').submit(function () {
         if ($('#m').val() !== "") {
@@ -87,7 +123,6 @@ $(function () {
 
 // Outputs the latest message
     socket.on('chat message', function (msg) {
-        //$('#messages').append($('<ul>').text(msg))
         var message = document.createElement('div');
         message.setAttribute('class', 'chat-message');
         message.innerHTML = msg;
@@ -96,20 +131,7 @@ $(function () {
         message.scrollIntoView(false);
     });
 
-//  Replaces the canvas with a white rectangle, aka clearing it
-    ctx.clear = function () {
-        ctx.clearRect(0, 0, c.width, c.height);
-    };
 
-// When the button "clear" is pressed, it calls the socket 'clear'
-    $('#clearbutton').on('click', function () {
-        socket.emit('clear');
-    });
-
-// Calls the clear function when it receives the call from the server
-    socket.on('clear', function () {
-        ctx.clear();
-    });
 
 
     $('input:checkbox').on('click', function () {
@@ -121,9 +143,9 @@ $(function () {
         } else {
             $box.prop("checked", false);
         }
+
     });
 
 
-    
 
 });
