@@ -12,6 +12,10 @@ $(function () {
     var endY;
     var old = {x: 0, y: 0};
 
+    var thickness;
+    var colour;
+
+
 // States what the pen will draw
     ctx.fillStyle = "solid";
     ctx.lineCap = "round";
@@ -25,8 +29,8 @@ $(function () {
     
 // When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled    
     $("#erases").on('click', function() {
-        ctx.strokeStyle = "#ffffff";
-        ctx.lineWidth = refreshSize();
+        colour = "#ffffff";
+        thickness = refreshSize();
         $("#sliderR, #sliderG, #sliderB").slider({
             disabled : true
         });
@@ -35,8 +39,8 @@ $(function () {
     
 // When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled    
     $("#penmode").on('click', function() {
-        ctx.strokeStyle = refreshColour();
-        ctx.lineWidth = refreshSize();
+        colour = refreshColour();
+        thickness = refreshSize();
         $('#sliderR, #sliderG, #sliderB').slider({
             disabled: false
         });
@@ -56,8 +60,8 @@ $(function () {
     
 // Returns the value of the thickness slider into the pen sizes    
     function refreshSize(){
-        return ctx.lineWidth = $("#sliderPen").slider("value");
-    };
+       thickness = $("#sliderPen").slider("value");
+    }
 
     
 // Returns the colour of the hex value generated from the rgb sliders
@@ -66,11 +70,7 @@ $(function () {
             green = $("#sliderG").slider("value"),
             blue = $("#sliderB").slider("value"),
             hex = hexFromRGB(red, green, blue);
-        if($("#erases").checked) {
-            return ctx.strokeStyle ="#ffffff";
-        }else{
-            return ctx.strokeStyle = "#" + hex;
-        };
+            colour = "#" + hex;
     }
 
     
@@ -116,7 +116,7 @@ $(function () {
         ismousedown = false;
         endX = event.pageX - ctx.canvas.offsetLeft;
         endY = event.pageY - ctx.canvas.offsetTop;
-        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: ctx.strokeStyle, thickness: ctx.lineWidth});
+        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
     }
 
 // Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
@@ -125,13 +125,13 @@ $(function () {
         if (ismousedown) {
             endX = event.pageX - ctx.canvas.offsetLeft;
             endY = event.pageY - ctx.canvas.offsetTop;
-            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: ctx.strokeStyle, thickness: ctx.lineWidth});
+            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
             startX = endX;
             startY = endY;
         }
     }
 
-// Actually draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
+// Draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
 // and sets the old variable to the current x and y coordinates, so that it can run again
     socket.on("draw", function (msg) {
         ctx.beginPath();
@@ -141,8 +141,12 @@ $(function () {
         ctx.lineWidth = msg.thickness;
         ctx.stroke();
         old = msg;
-        refreshColour();
-        refreshSize()
+        if($("#erases").checked = true){
+            refreshSize()
+        }else{
+            refreshColour();
+            refreshSize();
+        }
     });
 
 //  Replaces the canvas with a white rectangle, aka clearing it
@@ -208,6 +212,35 @@ $(function () {
         }
     });
 
+    function ROOM(){
+/*       _
+    .' `'.__
+        /      \ `'"-,
+        .-''''--...__..-/ .     |      \
+      .'               ; :'     '.  a   |
+     /                 | :.       \     =\
+    ;                   \':.      /  ,-.__;.-;`
+        /|     .              '--._   /-.7`._..-;`
+        ; |       '                |`-'      \  =|
+    |/\        .   -' /     /  ;         |  =/
+        (( ;.       ,_  .:|     | /     /\   | =|
+    ) / `\     | `""`;     / |    | /   / =/
+     | ::|    |      \    \ \    \ `--' =/
+        /  '/\    /       )    |/     `-...-`
+        /    | |  `\    /-'    /;
+   \  ,,/ |    \   D    .'  \
+    `""`   \  nnh  D_.-'L__nnh
+            `"""`
+*/
+    };
+
 
 
 });
+
+
+
+
+
+
+
