@@ -15,7 +15,7 @@
         width: 512px;
     }
 
-    #messages {
+       #messages {
         text-align: left;
         width: 400px;
     }
@@ -34,13 +34,26 @@
         height:300px;
         overflow-y:scroll;
         padding:10px;
-        background-color: white;
+        background-colour: white;
 
     }
 
+    #sliderR .ui-slider-range { background: #ef2929; }
+    #sliderR .ui-slider-handle { border-color: #ef2929; }
+    #sliderG .ui-slider-range { background: #8ae234; }
+    #sliderG .ui-slider-handle { border-color: #8ae234; }
+    #sliderB .ui-slider-range { background: #729fcf; }
+    #sliderB .ui-slider-handle { border-color: #729fcf; }
+
+    #sliderR, #sliderG, #sliderB {
+        clear: left;
+        width: 300px;
+        margin: 15px;
 
 
 </style>
+
+<link rel = "stylesheet" href = "https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
 <body onload = changeCursor();>
 
@@ -48,6 +61,7 @@
     <tr>
         <td>
             <ul id="users">
+              <li>User list</li>
 
             </ul>
         </td>
@@ -77,6 +91,22 @@
             <div id="Buttons">
                 <label><input type="checkbox" class="radio" name="button[1][]" id="erases" value="1">Eraser</label>
                 <label><input type="checkbox" class="radio" name="button[1][]" id="penmode" value="1">Pen</label>
+
+            </div>
+            <div id = "sliderPen">
+
+            </div>
+
+            <div id = "sliderR">
+
+            </div>
+
+            <div id = "sliderG">
+
+            </div>
+
+            <div id = "sliderB">
+
             </div>
         </td>
         <td>
@@ -101,8 +131,12 @@
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script src="/game.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script> var username = "{{username}}"</script>
 <script> function changeCursor(){document.getElementById("draw").style.cursor = 'crosshair'}</script>
+
 
 </body>
 </html>

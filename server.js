@@ -15,7 +15,7 @@ var mustacheExpress = require('mustache-express');
 const PORT=80;
 
 
-// Setup facebook login strategy
+// Setup Facebook login strategy
 
 passport.use(new Strategy({
 	clientID: process.env.CLIENT_ID,
@@ -122,7 +122,8 @@ io.on('connection', function(socket) {
 		io.emit('chat message', msg);
 	});
 	socket.on('draw', function(msg){
-		console.log(msg);
+		//console.log(msg);
+		console.log("Draw msg received");
 		io.emit('draw', msg);
 	});
 	socket.on('clear', function(){
