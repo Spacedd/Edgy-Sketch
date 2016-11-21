@@ -14,36 +14,92 @@ $(function () {
 
 // States what the pen will draw
     ctx.fillStyle = "solid";
-    ctx.lineWidth = 5;
     ctx.lineCap = "round";
-
-
 
 
 // Adds the listeners for the canvas for when the mouse goes up, down or just moves
     c.addEventListener("mousedown", doMouseDown, false);
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
+    
+    
+// When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled    
     $("#erases").on('click', function() {
-      ctx.strokeStyle = "#ffffff"
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = refreshSize();
+        $("#sliderR, #sliderG, #sliderB").slider({
+            disabled : true
+        });
     });
+   
+    
+// When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled    
     $("#penmode").on('click', function() {
-      ctx.strokeStyle = "#000000"
+        ctx.strokeStyle = refreshColour();
+        ctx.lineWidth = refreshSize();
+        $('#sliderR, #sliderG, #sliderB').slider({
+            disabled: false
+        });
     });
 
+    
+// The slider class for the thickness slider    
     $("#sliderPen").slider({
-      orientation: "horizontal",
-      range: "min",
-      max: 20,
-      value: 5,
-      slide: refreshSize,
-      change: refreshSize
+        orientation: "horizontal",
+        range: "min",
+        max: 30,
+        value: 5,
+        slide: refreshSize,
+        change: refreshSize
     });
 
+    
+// Returns the value of the thickness slider into the pen sizes    
     function refreshSize(){
-      var penWidth = $("#sliderPen").slider("value");
-      ctx.lineWidth = penWidth;
+        return ctx.lineWidth = $("#sliderPen").slider("value");
     };
+
+    
+// Returns the colour of the hex value generated from the rgb sliders
+    function refreshColour() {
+        var red = $("#sliderR").slider("value"),
+            green = $("#sliderG").slider("value"),
+            blue = $("#sliderB").slider("value"),
+            hex = hexFromRGB(red, green, blue);
+        if($("#erases").checked) {
+            return ctx.strokeStyle ="#ffffff";
+        }else{
+            return ctx.strokeStyle = "#" + hex;
+        };
+    }
+
+    
+// Converts the binary value to hex for each slider    
+    function hexFromRGB(r, g, b) {
+        var hex = [
+            r.toString(16),
+            g.toString(16),
+            b.toString(16)
+        ];
+        $.each(hex, function(nr, val){
+            if (val.length === 1){
+                hex[nr] = "0" + val;  // If the value of the hex is only 0 - F then a 0 is added to the front
+            }
+    });
+        return hex.join("").toUpperCase();  // Joins the hex values to one string
+    }
+
+    
+// Sets the rgb sliders to a min and max   
+    $("#sliderR, #sliderG, #sliderB").slider({
+        orientation: "horizontal",
+        range: "min",
+        max: 255,
+        value: 0,
+        slide: refreshColour,
+        change: refreshColour
+    });
+
 
 // Variable which later decides whether to draw or not
     var ismousedown = false;
@@ -60,7 +116,7 @@ $(function () {
         ismousedown = false;
         endX = event.pageX - ctx.canvas.offsetLeft;
         endY = event.pageY - ctx.canvas.offsetTop;
-        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY});
+        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: ctx.strokeStyle, thickness: ctx.lineWidth});
     }
 
 // Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
@@ -69,7 +125,7 @@ $(function () {
         if (ismousedown) {
             endX = event.pageX - ctx.canvas.offsetLeft;
             endY = event.pageY - ctx.canvas.offsetTop;
-            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY});
+            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: ctx.strokeStyle, thickness: ctx.lineWidth});
             startX = endX;
             startY = endY;
         }
@@ -81,8 +137,12 @@ $(function () {
         ctx.beginPath();
         ctx.moveTo(msg.startX, msg.startY);
         ctx.lineTo(msg.endX, msg.endY);
+        ctx.strokeStyle = msg.colour;
+        ctx.lineWidth = msg.thickness;
         ctx.stroke();
         old = msg;
+        refreshColour();
+        refreshSize()
     });
 
 //  Replaces the canvas with a white rectangle, aka clearing it
@@ -109,6 +169,9 @@ $(function () {
         return false;
     });
 
+    
+// When the user selects their nickname it emits that the user has changed their name, and their new nickname.
+// Also validates if the nickname box is empty
     $('#setnick').submit(function () {
         if ($('#nick').val() !== "") {
             var newusername = $("#nick").val();
@@ -132,8 +195,8 @@ $(function () {
     });
 
 
-
-
+    
+// Makes sure only one box can be ticked at a time from array of checkboxes    
     $('input:checkbox').on('click', function () {
         var $box = $(this);
         if ($box.is(":checked")) {
@@ -143,7 +206,6 @@ $(function () {
         } else {
             $box.prop("checked", false);
         }
-
     });
 
 
