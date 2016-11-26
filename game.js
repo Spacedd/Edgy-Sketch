@@ -14,8 +14,8 @@ $(function () {
 
     var thickness;
     var colour;
-
-
+    
+    
 // States what the pen will draw
     ctx.fillStyle = "solid";
     ctx.lineCap = "round";
@@ -64,16 +64,17 @@ $(function () {
     }
 
     
-// Returns the colour of the hex value generated from the rgb sliders
+// Returns the colour of the hex value generated from the rgb sliders, also displays the colour in the display box
     function refreshColour() {
         var red = $("#sliderR").slider("value"),
             green = $("#sliderG").slider("value"),
             blue = $("#sliderB").slider("value"),
             hex = hexFromRGB(red, green, blue);
             colour = "#" + hex;
+        $("#colourDisplay").css("background-color", colour);
     }
-
     
+      
 // Converts the binary value to hex for each slider    
     function hexFromRGB(r, g, b) {
         var hex = [
@@ -213,24 +214,19 @@ $(function () {
     });
 
     function ROOM(){
-/*       _
-    .' `'.__
-        /      \ `'"-,
-        .-''''--...__..-/ .     |      \
-      .'               ; :'     '.  a   |
-     /                 | :.       \     =\
-    ;                   \':.      /  ,-.__;.-;`
-        /|     .              '--._   /-.7`._..-;`
-        ; |       '                |`-'      \  =|
-    |/\        .   -' /     /  ;         |  =/
-        (( ;.       ,_  .:|     | /     /\   | =|
-    ) / `\     | `""`;     / |    | /   / =/
-     | ::|    |      \    \ \    \ `--' =/
-        /  '/\    /       )    |/     `-...-`
-        /    | |  `\    /-'    /;
-   \  ,,/ |    \   D    .'  \
-    `""`   \  nnh  D_.-'L__nnh
-            `"""`
+/*
+     ___      ___
+    /   \____/   \
+   /    / __ \    \
+  /    |  ..  |    \
+  \___/|      |\___/\
+     | |_|  |_|      \
+     | |/|__|\|       \
+     |   |__|         |\
+     |   |__|   |_/  /  \
+     | @ |  | @ || @ |   '
+     |   |~~|   ||   |
+     'ooo'  'ooo''ooo'
 */
     };
 
