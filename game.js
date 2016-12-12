@@ -14,8 +14,8 @@ $(function () {
 
     var thickness;
     var colour;
-    
-    
+
+
 // States what the pen will draw
     ctx.fillStyle = "solid";
     ctx.lineCap = "round";
@@ -25,9 +25,9 @@ $(function () {
     c.addEventListener("mousedown", doMouseDown, false);
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
-    
-    
-// When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled    
+
+
+// When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled
     $("#erases").on('click', function() {
         colour = "#ffffff";
         thickness = refreshSize();
@@ -35,9 +35,9 @@ $(function () {
             disabled : true
         });
     });
-   
-    
-// When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled    
+
+
+// When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled
     $("#penmode").on('click', function() {
         colour = refreshColour();
         thickness = refreshSize();
@@ -46,8 +46,8 @@ $(function () {
         });
     });
 
-    
-// The slider class for the thickness slider    
+
+// The slider class for the thickness slider
     $("#sliderPen").slider({
         orientation: "horizontal",
         range: "min",
@@ -57,13 +57,13 @@ $(function () {
         change: refreshSize
     });
 
-    
-// Returns the value of the thickness slider into the pen sizes    
+
+// Returns the value of the thickness slider into the pen sizes
     function refreshSize(){
        thickness = $("#sliderPen").slider("value");
     }
 
-    
+
 // Returns the colour of the hex value generated from the rgb sliders, also displays the colour in the display box
     function refreshColour() {
         var red = $("#sliderR").slider("value"),
@@ -72,10 +72,11 @@ $(function () {
             hex = hexFromRGB(red, green, blue);
             colour = "#" + hex;
         $("#colourDisplay").css("background-color", colour);
+        return colour
     }
-    
-      
-// Converts the binary value to hex for each slider    
+
+
+// Converts the binary value to hex for each slider
     function hexFromRGB(r, g, b) {
         var hex = [
             r.toString(16),
@@ -90,8 +91,8 @@ $(function () {
         return hex.join("").toUpperCase();  // Joins the hex values to one string
     }
 
-    
-// Sets the rgb sliders to a min and max   
+
+// Sets the rgb sliders to a min and max
     $("#sliderR, #sliderG, #sliderB").slider({
         orientation: "horizontal",
         range: "min",
@@ -99,6 +100,7 @@ $(function () {
         value: 0,
         slide: refreshColour,
         change: refreshColour
+
     });
 
 
@@ -118,6 +120,8 @@ $(function () {
         endX = event.pageX - ctx.canvas.offsetLeft;
         endY = event.pageY - ctx.canvas.offsetTop;
         socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
+        ismousedown = false;
+
     }
 
 // Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
@@ -131,6 +135,32 @@ $(function () {
             startY = endY;
         }
     }
+
+
+    socket.on("connect", function(){
+        socket.emit("Newuser", username)
+    });
+
+    socket.on("disconnect", function(){
+        socket.emit("disconnect", username)
+    });
+
+   
+    socket.on("users", function(users){
+        var messageArea = $('#userlist');
+        messageArea.empty();
+        for (i = 0; i < users.length; i ++){
+           if (users[i]){
+               var message = document.createElement('li');
+               message.setAttribute('class', 'users');
+               message.innerHTML = users[i].name;
+               messageArea.append(message);
+               message.scrollIntoView(false);
+           }
+       }
+    });
+
+
 
 // Draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
 // and sets the old variable to the current x and y coordinates, so that it can run again
@@ -165,6 +195,7 @@ $(function () {
         ctx.clear();
     });
 
+
 // Validates the message, then sets the contents to blank after it has been sent
     $('#sendmessage').submit(function () {
         if ($('#m').val() !== "") {
@@ -174,16 +205,18 @@ $(function () {
         return false;
     });
 
-    
+
 // When the user selects their nickname it emits that the user has changed their name, and their new nickname.
 // Also validates if the nickname box is empty
     $('#setnick').submit(function () {
-        if ($('#nick').val() !== "") {
+        if ($('#nick').val() !== "" && $('#nick').val().length < 20) {                //if the nickname is greater than 20 or empty
             var newusername = $("#nick").val();
             socket.emit('chat message', username + " changed their nickname to: " + newusername);
             socket.emit('nickname', newusername);
             username = newusername;
             $('#nick').val('');
+        } else {
+
         }
         return false;
     });
@@ -200,8 +233,7 @@ $(function () {
     });
 
 
-    
-// Makes sure only one box can be ticked at a time from array of checkboxes    
+// Makes sure only one box can be ticked at a time from array of checkboxes
     $('input:checkbox').on('click', function () {
         var $box = $(this);
         if ($box.is(":checked")) {
@@ -212,6 +244,7 @@ $(function () {
             $box.prop("checked", false);
         }
     });
+
 
     function ROOM(){
 /*
@@ -229,14 +262,4 @@ $(function () {
      'ooo'  'ooo''ooo'
 */
     };
-
-
-
 });
-
-
-
-
-
-
-

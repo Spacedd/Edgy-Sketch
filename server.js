@@ -8,6 +8,7 @@ var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
 var io = require('socket.io')(http);
 var mustacheExpress = require('mustache-express');
+var users = new Array();
 
 
 // Says what port to listen to incoming data on
@@ -82,23 +83,24 @@ app.get('/login/facebook',
 
 app.get('/login/guest',
 	function(req, res){
-		res.render('game.html', {username: "Guest"} );
-		
+		res.render('game.html', {
+			username: "Guest" + (users.length)
+		});
 	});
 
 app.get('/login/facebook/return',
-	passport.authenticate('facebook', { failureRedirect: '/' }),
+	passport.authenticate('facebook', {
+		failureRedirect: '/'
+	}),
 	function(req, res) {
 		console.log("Successful login");
-		res.render('game.html', {username: req.user.displayName } );
+		res.render('game.html', {
+			username: req.user.displayName
+		});
 	});
 
 
-
 // Takes them to index if there is a successful login
-
-//req.user.displayName <--------- HOW TO GET FACEBOOK NAME
-
 
 app.get('/game',function(req,res) {
 	res.sendFile(__dirname + "\\game.html");
@@ -116,38 +118,62 @@ app.get('/login/brush.cur', function(req, res){
 	res.sendFile(__dirname + "\\brush.cur");
 });
 
-
+// When the server receives connections it opens certain sockets and logs what is has done
 // When the app listens it logs where it is listening to
 
-io.on('connection', function(socket) {
-	console.log("User connected");
-	io.emit('chat message', "User connected");
-	socket.on('disconnect', function(){
-		console.log('User disconnected');
-		io.emit('chat message', "User disconnected");
+io.on('connection', function(socket){
+
+    var user = {name: "unknown"};
+
+
+    socket.on('Newuser', function(msg){
+        console.log("User connected : " + msg);
+        user.name = msg;
+        users[users.length] = user;
+        io.emit('users', users);
+    });
+
+	socket.on('disconnect', function(msg){
+		console.log('User disconnected:' + msg);
+		user.name = msg;
+		for (var i = 0; i < users.length; i++) {
+			if(users[i]){
+				if (users[i].name === user.name){
+					users[i] = null
+				}
+			}
+		}
+		io.emit('users', users);
 	});
-	socket.on('Enter', function(){
+
+    socket.on('Enter', function(){
 		console.log("Enter pressed");
 	});
-	socket.on('chat message', function(msg) {
+
+    socket.on('chat message', function(msg){
 		console.log("message: " + msg);
 		io.emit('chat message', msg);
 	});
-	socket.on('draw', function(msg){
+
+    socket.on('draw', function(msg){
 		//console.log(msg);
 		console.log("Draw msg received");
 		io.emit('draw', msg);
 	});
-	socket.on('clear', function(){
+
+    socket.on('clear', function(){
 		console.log("Clearing canvas");
 		io.emit('clear');
 	});
-	socket.on('nickname', function(msg) {
+
+    socket.on('nickname', function(msg){
 		console.log("Nickname changed to: " + msg);
 		io.emit('nickname', msg);
+        user.name = msg;
+        io.emit('users', users)
 	});
 });
 
-http.listen(PORT, function() {
+http.listen(PORT, function(){
 	console.log("Listening on port ", PORT);
 });
