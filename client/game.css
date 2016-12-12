@@ -1,0 +1,151 @@
+body{
+    font-family: "Trebuchet MS", cursive, sans-serif;
+    background-image: url("poly-bg.png");
+}
+
+table, td, tr {
+    border: 1px solid black;
+    text-align: right;
+    padding: 10px;
+}
+
+#canvas {
+    width: 512px;
+}
+
+#messages {
+    text-align: left;
+    width: 400px;
+}
+
+#drawingTitle{
+    text-align: center;
+    font-size: 20px;
+    text-decoration: underline;
+    font-weight: bold;
+}
+
+#Buttons{
+    float: left;
+    padding: 5px;
+
+}
+
+#clearbutton{
+    display: inline-block;
+    padding: 15px 25px;
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #000000;
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 3px #999;
+}
+
+#clearbutton:active{
+    box-shadow: 0 1px #666;
+    transform: translateY(4px);
+}
+
+#sendmessage, #setnick{
+    margin:10px;
+}
+
+#btnSendMsg, #btnSetNick{
+    width: 120px;
+    height: 30px;
+    cursor: pointer;
+    box-shadow: 0 3px #999;
+    margin:10px;
+    outline: none;
+    background-color: #000000;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+
+}
+
+#btnSendMsg:active, #btnSetNick:active{
+    box-shadow: 0 1px #666;
+    transform: translateY(4px);
+}
+
+#m{
+    width:75%;
+    padding: 10px 5px;
+    border: 2px solid #555;
+}
+
+#nick{
+    padding: 10px 5px;
+    border: 2px solid #555;
+}
+
+
+td:first-child {
+    text-align: center;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.chat-messages {
+    width:98%;
+    height:470px;
+    overflow-y:scroll;
+    padding:10px;
+}
+
+#sliderR .ui-slider-range { background: #ef2929; }
+#sliderR .ui-slider-handle { border-color: #ef2929; }
+#sliderG .ui-slider-range { background: #8ae234; }
+#sliderG .ui-slider-handle { border-color: #8ae234; }
+#sliderB .ui-slider-range { background: #729fcf; }
+#sliderB .ui-slider-handle { border-color: #729fcf; }
+
+#sliderR, #sliderG, #sliderB {
+    float: left;
+    clear: left;
+    width: 300px;
+    margin: 15px;
+
+}
+
+#colourDisplay {
+    width: 150px;
+    height: 110px;
+    margin-top: 18px;
+    margin-left: 345px;
+
+    padding: 1px;
+    background-color: black;
+}
+
+#sliderPen{
+    margin-top: 90px;
+}
+
+#users{
+    list-style-type: none;
+
+}
+
+.title{
+    text-align:center;
+    font-size: 18px;
+    text-decoration: underline;
+    font-weight: bold;
+
+}
+
+#userlist{
+    list-style-type:none;
+
+}
