@@ -1,11 +1,11 @@
 $(function () {
     var socket = io();
 
-// Creates the canvas and gives it the element draw
+    // Creates the canvas and gives it the element draw
     var c = document.getElementById("draw");
     var ctx = c.getContext("2d");
 
-// Variables for the canvas and pen
+    // Variables for the canvas and pen
     var startX;
     var startY;
     var endX;
@@ -16,18 +16,54 @@ $(function () {
     var colour;
 
 
-// States what the pen will draw
+    // States what the pen will draw
     ctx.fillStyle = "solid";
     ctx.lineCap = "round";
 
 
-// Adds the listeners for the canvas for when the mouse goes up, down or just moves
+    // Adds the listeners for the canvas for when the mouse goes up, down or just moves
     c.addEventListener("mousedown", doMouseDown, false);
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
+    
 
+    // Variable which later decides whether to draw or not
+    var ismousedown = false;
+    
 
-// When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled
+    // Grabs the x and y coordinates of the mousedown position
+    function doMouseDown(event) {
+        ismousedown = true;
+        startX = event.pageX - ctx.canvas.offsetLeft;
+        startY = event.pageY - ctx.canvas.offsetTop;
+    }
+
+    
+    // Grabs the x and y coordinates of the mouseup position and then sends an emit to the function draw
+    function doMouseUp(event) {
+        ismousedown = false;
+        endX = event.pageX - ctx.canvas.offsetLeft;
+        endY = event.pageY - ctx.canvas.offsetTop;
+        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
+        ismousedown = false;
+
+    }
+
+    
+    // Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
+    // beginning of the "line"
+    function doMouseMove(event) {
+        if (ismousedown) {
+            endX = event.pageX - ctx.canvas.offsetLeft;
+            endY = event.pageY - ctx.canvas.offsetTop;
+            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
+            startX = endX;
+            startY = endY;
+        }
+    }
+  
+
+    // When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled
     $("#erases").on('click', function() {
         colour = "#ffffff";
         thickness = refreshSize();
@@ -37,7 +73,7 @@ $(function () {
     });
 
 
-// When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled
+    // When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled
     $("#penmode").on('click', function() {
         colour = refreshColour();
         thickness = refreshSize();
@@ -47,7 +83,7 @@ $(function () {
     });
 
 
-// The slider class for the thickness slider
+    // The slider class for the thickness slider
     $("#sliderPen").slider({
         orientation: "horizontal",
         range: "min",
@@ -58,13 +94,13 @@ $(function () {
     });
 
 
-// Returns the value of the thickness slider into the pen sizes
+    // Returns the value of the thickness slider into the pen sizes
     function refreshSize(){
        thickness = $("#sliderPen").slider("value");
     }
 
 
-// Returns the colour of the hex value generated from the rgb sliders, also displays the colour in the display box
+    // Returns the colour of the hex value generated from the rgb sliders, also displays the colour in the display box
     function refreshColour() {
         var red = $("#sliderR").slider("value"),
             green = $("#sliderG").slider("value"),
@@ -76,7 +112,7 @@ $(function () {
     }
 
 
-// Converts the binary value to hex for each slider
+    // Converts the binary value to hex for each slider
     function hexFromRGB(r, g, b) {
         var hex = [
             r.toString(16),
@@ -92,7 +128,7 @@ $(function () {
     }
 
 
-// Sets the rgb sliders to a min and max
+    // Sets the rgb sliders to a min and max
     $("#sliderR, #sliderG, #sliderB").slider({
         orientation: "horizontal",
         range: "min",
@@ -104,39 +140,6 @@ $(function () {
     });
 
 
-// Variable which later decides whether to draw or not
-    var ismousedown = false;
-
-// Grabs the x and y coordinates of the mousedown position
-    function doMouseDown(event) {
-        ismousedown = true;
-        startX = event.pageX - ctx.canvas.offsetLeft;
-        startY = event.pageY - ctx.canvas.offsetTop;
-    }
-
-// Grabs the x and y coordinates of the mouseup position and then sends an emit to the function draw
-    function doMouseUp(event) {
-        ismousedown = false;
-        endX = event.pageX - ctx.canvas.offsetLeft;
-        endY = event.pageY - ctx.canvas.offsetTop;
-        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
-        ismousedown = false;
-
-    }
-
-// Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
-// beginning of the "line"
-    function doMouseMove(event) {
-        if (ismousedown) {
-            endX = event.pageX - ctx.canvas.offsetLeft;
-            endY = event.pageY - ctx.canvas.offsetTop;
-            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
-            startX = endX;
-            startY = endY;
-        }
-    }
-
-
     socket.on("connect", function(){
         socket.emit("Newuser", username)
     });
@@ -145,7 +148,7 @@ $(function () {
         socket.emit("disconnect", username)
     });
 
-   
+
     socket.on("users", function(users){
         var messageArea = $('#userlist');
         messageArea.empty();
@@ -160,10 +163,27 @@ $(function () {
        }
     });
 
+  
+    // Prevent scrolling when touching the canvas on moblie
+    document.body.addEventListener("touchdown", function (event) {
+        if (event.target == c) {
+            event.preventDefault();
+        }
+    }, false);
+    document.body.addEventListener("touchend", function (event) {
+        if (event.target == c) {
+            event.preventDefault();
+        }
+    }, false);
+    document.body.addEventListener("touchmove", function (event) {
+        if (event.target == c) {
+            event.preventDefault();
+        }
+    }, false);
 
 
-// Draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
-// and sets the old variable to the current x and y coordinates, so that it can run again
+    // Draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
+    // and sets the old variable to the current x and y coordinates, so that it can run again
     socket.on("draw", function (msg) {
         ctx.beginPath();
         ctx.moveTo(msg.startX, msg.startY);
@@ -180,34 +200,34 @@ $(function () {
         }
     });
 
-//  Replaces the canvas with a white rectangle, aka clearing it
+    //  Replaces the canvas with a white rectangle, aka clearing it
     ctx.clear = function () {
         ctx.clearRect(0, 0, c.width, c.height);
     };
 
-// When the button "clear" is pressed, it calls the socket 'clear'
+    // When the button "clear" is pressed, it calls the socket 'clear'
     $('#clearbutton').on('click', function () {
         socket.emit('clear');
     });
 
-// Calls the clear function when it receives the call from the server
+    // Calls the clear function when it receives the call from the server
     socket.on('clear', function () {
         ctx.clear();
     });
 
 
-// Validates the message, then sets the contents to blank after it has been sent
+    // Validates the message, then sets the contents to blank after it has been sent
     $('#sendmessage').submit(function () {
         if ($('#m').val() !== "") {
-            socket.emit('chat message', username + ": " + $('#m').val());
+            socket.emit('chat message', username + " :" +  $('#m').val());
             $('#m').val('');
         }
         return false;
     });
 
 
-// When the user selects their nickname it emits that the user has changed their name, and their new nickname.
-// Also validates if the nickname box is empty
+    // When the user selects their nickname it emits that the user has changed their name, and their new nickname.
+    // Also validates if the nickname box is empty
     $('#setnick').submit(function () {
         if ($('#nick').val() !== "" && $('#nick').val().length < 20) {                //if the nickname is greater than 20 or empty
             var newusername = $("#nick").val();
@@ -222,18 +242,13 @@ $(function () {
     });
 
 
-// Outputs the latest message
+    // Outputs the latest message
     socket.on('chat message', function (msg) {
-        var message = document.createElement('div');
-        message.setAttribute('class', 'chat-message');
-        message.innerHTML = msg;
-        var messageArea = $('.chat-messages');
-        messageArea.append(message);
-        message.scrollIntoView(false);
+        messageCreation(msg)
     });
 
 
-// Makes sure only one box can be ticked at a time from array of checkboxes
+    // Makes sure only one box can be ticked at a time from array of checkboxes
     $('input:checkbox').on('click', function () {
         var $box = $(this);
         if ($box.is(":checked")) {
@@ -245,10 +260,47 @@ $(function () {
         }
     });
 
+    var selected = document.getElementById('dropbox');
+
+   
+    $('#startGame').on('click', function(){
+        //getWordSet("easy");
+        socket.emit('newgame');
+    });
+
+    socket.on('hidebox', function(){
+        $('.startGame').fadeOut();
+    });
+
+   
+    socket.on('current word', function(wordToGuess){
+        messageCreation("The word you need to draw is : " + wordToGuess)
+    });
+
+    socket.on('game start', function(round, currentWordLength){
+        if (round === 1) {
+            messageCreation("The game is afoot");
+        }else{
+            messageCreation("Round : " + round);
+        }
+        messageCreation("The word is  " + currentWordLength + " letters long");
+    });
+
+
+    function messageCreation(text){
+        var message = document.createElement('div');
+        message.setAttribute('class', 'chat-message');
+        message.innerHTML = text;
+        var messageArea = $('.chat-messages');
+        messageArea.append(message);
+        message.scrollIntoView(false);
+    }
+   
+
+
 
     function ROOM(){
-/*
-     ___      ___
+/*   ___      ___
     /   \____/   \
    /    / __ \    \
   /    |  ..  |    \

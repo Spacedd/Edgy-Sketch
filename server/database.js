@@ -1,18 +1,28 @@
-var mysql      = require('mysql');
+var mysql = require('mysql');
 var connection = mysql.createConnection({
-    host     : 'localhost',
-    user     : 'root',
+    host : 'localhost',
+    user : 'root',
     password : 'root',
     database : 'edgysketch'
 });
 
-connection.connect();
+function getWordSet(wordSetReq, cb) {
 
-connection.query('SELECT * from wordbank', function(err, rows, fields) {
-    if (!err)
-        console.log('The solution is: ', rows);
-    else
-        console.log('Error while performing Query.');
-});
+    var words = new Array();
+    connection.connect();
+    connection.query('SELECT value from wordbank where wordbank.wordSet = ?', [wordSetReq], function (err, rows, fields) {
+        if (!err) {
+            var i;
+            for (i = 0; i < 5; i++) {
+                words[words.length] = rows[i];
+            }            
+        } else {
+            console.log('Error while performing Query.');
+        }
+        cb(err, words);
+    });
 
-connection.end();
+    connection.end();
+}
+
+exports.getWordSet = getWordSet;

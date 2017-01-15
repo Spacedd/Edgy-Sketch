@@ -3,11 +3,15 @@
     <words>
       <w>chatroom</w>
       <w>clearbutton</w>
+      <w>dropdown</w>
       <w>ismousedown</w>
       <w>mousedown</w>
       <w>mouseisdown</w>
       <w>mousemove</w>
       <w>mouseup</w>
+      <w>newgame</w>
+      <w>newmsg</w>
+      <w>newround</w>
       <w>newuser</w>
       <w>newusername</w>
       <w>oldx</w>
@@ -17,6 +21,11 @@
       <w>sendmessage</w>
       <w>sendmssage</w>
       <w>setnick</w>
+      <w>touchend</w>
+      <w>touchmove</w>
+      <w>touchstart</w>
+      <w>userlist</w>
+      <w>wordbank</w>
       <w>xlarge</w>
       <w>xpos</w>
       <w>ypos</w>

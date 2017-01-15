@@ -9,16 +9,19 @@ var Strategy = require('passport-facebook').Strategy;
 var io = require('socket.io')(http);
 var mustacheExpress	= require('mustache-express');
 var users = new Array();
-require ("./database.js");
+var database = require ("./database.js");
+var gameWords = new Array();
+var currentWord;
+var round;
+var drawer;
 
 // Says what port to listen to incoming data on
 
 const PORT=80;
 
-
 // Enables the page logo
 
-app.use(favicon(__dirname + "/../client/media/claypepe.png"));
+app.use(favicon(__dirname + "/../client/media/pen logo.png"));
 
 
 // Setup Facebook login strategy
@@ -141,7 +144,22 @@ io.on('connection', function(socket){
 
     socket.on('chat message', function(msg){
 		console.log("message: " + msg);
-		io.emit('chat message', msg);
+		var newmsg;
+		newmsg = msg.substring(msg.indexOf(":") + 1);
+		if(socket == drawer) {
+			socket.emit('chat message', "You can not speak whist drawing");
+		} else {
+			if(newmsg === currentWord){
+				socket.emit('chat message', "You guessed the correct word!");
+				socket.broadcast.emit('chat message', "The word was guessed!");
+				var index  = gameWords.indexOf(currentWord);
+				gameWords.splice(index, 1);
+				console.log(gameWords);
+				newround();
+			} else {
+				io.emit('chat message', msg);
+			}
+		}
 	});
 
     socket.on('draw', function(msg){
@@ -161,6 +179,38 @@ io.on('connection', function(socket){
         user.name = msg;
         io.emit('users', users)
 	});
+
+
+	socket.on('newgame', function(){
+		console.log("Start game pressed");
+		socket.broadcast.emit('hidebox');
+		var currentWordSet = database.getWordSet("Easy", function(err, words){
+            if (!err) {
+				for(var index = 0; index < words.length; index++){
+					gameWords[index]=words[index].value;
+				}
+				console.log(gameWords);
+				round = 0;
+				newround()
+            }else{
+                console.log(err);
+                return err;
+            }
+        });
+	});
+	
+	var newround = function(){
+		drawer = socket;
+		if (gameWords.length != 0){
+			round++;
+			currentWord = gameWords[Math.floor(Math.random()*gameWords.length)];
+			socket.emit('current word', currentWord);
+			socket.broadcast.emit('game start', round, currentWord.length);
+		} else {
+			currentWord = "";
+			socket.emit('chat message', "The game has ended");			
+		}	
+	}	
 });
 
 http.listen(PORT, function(){

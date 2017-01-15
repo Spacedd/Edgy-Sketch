@@ -20,9 +20,17 @@
         </td>
         <td id="canvas">
           <table>
-          <tr id = "wordDisplay">
+          <td id = "wordDisplay">
             Version Number: 1.1.8
-          </tr>
+          </td>
+          <td id = "wordSetSelection">
+              <select id = "wordSetDropBox">
+                  <option selected ="true" style = "display:none;">Word Difficulty</option>
+                  <option value = "easy">Easy</option>
+                  <option value = "medium">Medium</option>
+                  <option value = "hard">Hard</option>
+              </select>
+          </td>
         </table>
             <div class="box">
                 <canvas id="draw" width="512" height="512" style="position: relative; border: 2px solid black; background-color: white;">
@@ -38,10 +46,9 @@
             </div>
         </td>
     </tr>
-    <tr>
-        <td>
-
-        </td>
+    <td>
+       <button id = "startGame" >Start game</button>
+    </td>
         <td id = "DrawingOptions">
             <ul id = drawingTitle>D R A W I N G__O P T I O N S</ul>
             <div id="clears">
@@ -96,8 +103,11 @@
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script> var username = "{{username}}"</script>
-<script> function changeCursor(){document.getElementById("draw").style.cursor = 'crosshair'}</script>
-
+<script>
+function changeCursor(){
+  document.getElementById("draw").style.cursor = 'crosshair'
+}
+</script>
 
 </body>
 </html>
