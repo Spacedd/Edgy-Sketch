@@ -14,6 +14,7 @@ var gameWords = new Array();
 var currentWord;
 var round;
 var drawer;
+var gamerunning = false;
 
 // Says what port to listen to incoming data on
 
@@ -94,9 +95,13 @@ app.get('/login/facebook',
 
 app.get('/login/guest',
 	function(req, res){
-		res.render('../client/game.html', {
-			username: "Guest" + (users.length)
-		});
+		if (gamerunning != true) {
+			res.render('../client/game.html', {
+				username: "Guest" + (users.length)
+			});
+		} else {
+			res.redirect("../gameInProgress.html");
+		}
 	});
 
 app.get('/login/facebook/return',
@@ -180,9 +185,11 @@ io.on('connection', function(socket){
         io.emit('users', users)
 	});
 
-
+	
 	socket.on('newgame', function(){
-		console.log("Start game pressed");
+		gamerunning = true;
+		console.log("Start game pressed");		
+		socket.emit('hidebox');
 		socket.broadcast.emit('hidebox');
 		var currentWordSet = database.getWordSet("Easy", function(err, words){
             if (!err) {
@@ -208,7 +215,8 @@ io.on('connection', function(socket){
 			socket.broadcast.emit('game start', round, currentWord.length);
 		} else {
 			currentWord = "";
-			socket.emit('chat message', "The game has ended");			
+			socket.emit('chat message', "The game has ended");
+			gamerunning = false;
 		}	
 	}	
 });
