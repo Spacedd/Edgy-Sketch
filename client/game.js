@@ -12,8 +12,8 @@ $(function () {
     var endY;
     var old = {x: 0, y: 0};
 
-    var thickness;
-    var colour;
+    var thickness = 5;
+    var colour = "#00000";
 
 
     // States what the pen will draw
@@ -45,8 +45,6 @@ $(function () {
         endX = event.pageX - ctx.canvas.offsetLeft;
         endY = event.pageY - ctx.canvas.offsetTop;
         socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
-        ismousedown = false;
-
     }
 
     
@@ -88,9 +86,10 @@ $(function () {
         orientation: "horizontal",
         range: "min",
         max: 30,
-        value: 5,
+        value: thickness,
         slide: refreshSize,
-        change: refreshSize
+        change: refreshSize,
+        //create: refreshSize
     });
 
 
@@ -133,9 +132,10 @@ $(function () {
         orientation: "horizontal",
         range: "min",
         max: 255,
-        value: 0,
+        value: 1,
         slide: refreshColour,
-        change: refreshColour
+        change: refreshColour,
+        //create: refreshColour
 
     });
 
@@ -192,12 +192,12 @@ $(function () {
         ctx.lineWidth = msg.thickness;
         ctx.stroke();
         old = msg;
-        if($("#erases").checked = true){
+    /*    if($("#erases").checked = true){
             refreshSize()
         }else{
             refreshColour();
             refreshSize();
-        }
+        } */
     });
 
     //  Replaces the canvas with a white rectangle, aka clearing it
@@ -266,14 +266,15 @@ $(function () {
     $('#startGame').on('click', function(){
         //getWordSet("easy");
         socket.emit('newgame');
+        socket.emit('clear');
     });
 
     socket.on('hidebox', function(){
-        $('.startGame').fadeOut();
+        document.getElementById("startGame").disabled = true;
     });
+    
 
-   
-    socket.on('current word', function(wordToGuess){
+   socket.on('current word', function(wordToGuess){
         messageCreation("The word you need to draw is : " + wordToGuess)
     });
 
@@ -283,6 +284,7 @@ $(function () {
         }else{
             messageCreation("Round : " + round);
         }
+        socket.emit('clear');
         messageCreation("The word is  " + currentWordLength + " letters long");
     });
 
@@ -300,7 +302,7 @@ $(function () {
 
 
     function ROOM(){
-/*   ___      ___
+    /*   ___      ___
     /   \____/   \
    /    / __ \    \
   /    |  ..  |    \
@@ -312,6 +314,6 @@ $(function () {
      | @ |  | @ || @ |   '
      |   |~~|   ||   |
      'ooo'  'ooo''ooo'
-*/
+    */
     };
 });
