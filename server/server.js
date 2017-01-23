@@ -15,6 +15,9 @@ var currentWord;
 var round;
 var drawer;
 var gamerunning = false;
+var count = 60;
+var t;
+var timerOn = 0;
 
 // Says what port to listen to incoming data on
 
@@ -198,27 +201,60 @@ io.on('connection', function(socket){
 				}
 				console.log(gameWords);
 				round = 0;
-				newround()
+				newround();
             }else{
                 console.log(err);
                 return err;
             }
         });
 	});
-	
+
 	var newround = function(){
 		drawer = socket;
+		stopCount();
 		if (gameWords.length != 0){
 			round++;
 			currentWord = gameWords[Math.floor(Math.random()*gameWords.length)];
 			socket.emit('current word', currentWord);
 			socket.broadcast.emit('game start', round, currentWord.length);
+			startCount();
 		} else {
 			currentWord = "";
 			socket.emit('chat message', "The game has ended");
 			gamerunning = false;
-		}	
-	}	
+		}
+	};
+
+	var timedCount = function(){
+		if (count !==0){
+			socket.emit('chat message', "Time left = " + count);
+			socket.broadcast.emit('chat message', "Time left = " + count);
+			count -= 1;
+			t = setTimeout(function(){
+				timedCount();
+			}, 1000);
+		} else {
+			socket.emit('chat message', "Time is up");
+			socket.broadcast.emit('chat message', "Time is up");
+			stopCount();
+			newround();
+		}
+	};
+
+	var startCount = function(){
+		console.log("Timer started");
+		if (!timerOn){
+			timerOn = 1;
+			timedCount();
+		}
+	};
+
+	var stopCount = function() {
+		console.log("Timer stopped");
+		clearTimeout(t);
+		count = 60;
+		timerOn = 0;
+	}
 });
 
 http.listen(PORT, function(){
