@@ -10,14 +10,17 @@ var io = require('socket.io')(http);
 var mustacheExpress	= require('mustache-express');
 var users = new Array();
 var database = require ("./database.js");
-var gameWords = new Array();
-var currentWord;
-var round;
-var drawer;
-var gamerunning = false;
-var count = 60;
-var t;
-var timerOn = 0;
+
+var game = {
+	gameWords: new Array(),
+	currentWord: "",
+	round: 0,
+	drawer: null,
+	gamerunning: false,
+	count: 60,
+	t: 0,
+	timerOn: 0
+};
 
 // Says what port to listen to incoming data on
 
@@ -98,7 +101,7 @@ app.get('/login/facebook',
 
 app.get('/login/guest',
 	function(req, res){
-		if (gamerunning != true) {
+		if (game.gamerunning != true) {
 			res.render('../client/game.html', {
 				username: "Guest" + (users.length)
 			});
@@ -124,7 +127,7 @@ app.get('/login/facebook/return',
 
 io.on('connection', function(socket){
 
-    var user = {name: "unknown"};
+    var user = {name: "unknown", score: 0, socketid: socket.id};
 
     socket.on('Newuser', function(msg){
         console.log("User connected : " + msg);
@@ -134,12 +137,15 @@ io.on('connection', function(socket){
     });
 
 	socket.on('disconnect', function(msg){
-		console.log('User disconnected:' + msg);
+		console.log('User disconnected:' + user.name);
 		user.name = msg;
 		for (var i = 0; i < users.length; i++) {
 			if(users[i]){
 				if (users[i].name === user.name){
-					users[i] = null
+					users.splice(i, 1);
+					if ((game.gamerunning && users.length < 2)||socket == game.drawer){
+						stopGame();
+					}
 				}
 			}
 		}
@@ -154,31 +160,43 @@ io.on('connection', function(socket){
 		console.log("message: " + msg);
 		var newmsg;
 		newmsg = msg.substring(msg.indexOf(":") + 1);
-		if(socket == drawer) {
+		if(socket == game.drawer) {
 			socket.emit('chat message', "You can not speak whist drawing");
 		} else {
-			if(newmsg === currentWord){
+			if(newmsg === game.currentWord){
 				socket.emit('chat message', "You guessed the correct word!");
 				socket.broadcast.emit('chat message', "The word was guessed!");
-				var index  = gameWords.indexOf(currentWord);
-				gameWords.splice(index, 1);
-				console.log(gameWords);
-				newround();
+				user.score += game.count;
+				socket.emit('users', users);
+				socket.broadcast.emit('users', users);
+				socket.emit('globalWordToShow', game.currentWord);
+				socket.broadcast.emit('globalWordToShow', game.currentWord);
+				setTimeout(correctGuess, 5000);
 			} else {
 				io.emit('chat message', msg);
 			}
 		}
 	});
 
+	var correctGuess = function(){
+		var index  = game.gameWords.indexOf(game.currentWord);
+		game.gameWords.splice(index, 1);
+		console.log(game.gameWords);
+		newround();
+	};
+
     socket.on('draw', function(msg){
-		//console.log(msg);
-		console.log("Draw msg received");
-		io.emit('draw', msg);
+		if(!game.gamerunning || socket == game.drawer){	//Doesn't allow you to draw if you are not the drawer when the game is running
+			console.log("Draw msg received");
+			io.emit('draw', msg);
+		}
 	});
 
     socket.on('clear', function(){
-		console.log("Clearing canvas");
-		io.emit('clear');
+		if(!game.gamerunning || socket == game.drawer){
+			console.log("Clearing canvas");
+			io.emit('clear');
+		}
 	});
 
     socket.on('nickname', function(msg){
@@ -189,48 +207,81 @@ io.on('connection', function(socket){
 	});
 
 	
-	socket.on('newgame', function(){
-		gamerunning = true;
-		console.log("Start game pressed");		
-		socket.emit('hidebox');
-		socket.broadcast.emit('hidebox');
-		var currentWordSet = database.getWordSet("Easy", function(err, words){
-            if (!err) {
-				for(var index = 0; index < words.length; index++){
-					gameWords[index]=words[index].value;
+	socket.on('newgame', function(wordSet){
+		if (users.length > 1 ){
+			game.gamerunning = true;
+			console.log("Start game pressed, wordset = " + wordSet);
+			socket.emit('hidebox');
+			socket.broadcast.emit('hidebox');
+			var currentWordSet = database.getWordSet(wordSet, function(err, words){
+				if (!err) {
+					for(var index = 0; index < words.length; index++){
+						game.gameWords[index]=words[index].value;
+					}
+					console.log(game.gameWords);
+					game.round = 0;
+					newround();
+				}else{
+					console.log(err);
+					return err;
 				}
-				console.log(gameWords);
-				round = 0;
-				newround();
-            }else{
-                console.log(err);
-                return err;
-            }
-        });
+			});
+		} else {
+			socket.emit('chat message', "There must be at least two people to play a game.");
+		}
 	});
 
 	var newround = function(){
-		drawer = socket;
 		stopCount();
-		if (gameWords.length != 0){
-			round++;
-			currentWord = gameWords[Math.floor(Math.random()*gameWords.length)];
-			socket.emit('current word', currentWord);
-			socket.broadcast.emit('game start', round, currentWord.length);
+		if (game.gameWords.length != 0){
+			game.drawer = socket;
+			game.round++;
+			game.currentWord = game.gameWords[Math.floor(Math.random()*game.gameWords.length)];
+			socket.emit('current word', game.currentWord);
+			socket.broadcast.emit('game start', game.round, game.currentWord.length);
 			startCount();
 		} else {
-			currentWord = "";
-			socket.emit('chat message', "The game has ended");
-			gamerunning = false;
+			stopGame();
 		}
 	};
 
+	var stopGame = function(){
+		console.log("Game stopped");
+		stopCount();
+		game.drawer = null;
+		game.currentWord = "";
+		var winner = calculateHighest();
+		socket.emit('chat message', "The game has ended. The winner was " + winner.name + " with a score of " + winner.score);
+		socket.broadcast.emit('chat message', "The game has ended. The winner was " + winner.name + " with a score of " + winner.score);
+		socket.emit('showbox');
+		socket.broadcast.emit('showbox');
+		game.gamerunning = false;
+		resetScores();
+	};
+
+	var resetScores = function(){
+		for(var i = 0; i < users.length; i++){
+			users[i].score = 0;
+			socket.emit('users', users);
+			socket.broadcast.emit('users', users);
+		}
+	};
+
+	var calculateHighest = function(){
+		var highest = users[0];
+		for(var i = 0; i < users.length; i++){
+			if (users[i].score > highest.score)
+				highest = users[i];
+		}
+		return highest
+	};
+
 	var timedCount = function(){
-		if (count !==0){
-			socket.emit('chat message', "Time left = " + count);
-			socket.broadcast.emit('chat message', "Time left = " + count);
-			count -= 1;
-			t = setTimeout(function(){
+		if (game.count !==0){
+			socket.emit('displayTime', "Time left: " + game.count);
+			socket.broadcast.emit('displayTime', "Time left: " + game.count);
+			game.count -= 1;
+			game.t = setTimeout(function(){
 				timedCount();
 			}, 1000);
 		} else {
@@ -243,17 +294,17 @@ io.on('connection', function(socket){
 
 	var startCount = function(){
 		console.log("Timer started");
-		if (!timerOn){
-			timerOn = 1;
+		if (!game.timerOn){
+			game.timerOn = 1;
 			timedCount();
 		}
 	};
 
 	var stopCount = function() {
 		console.log("Timer stopped");
-		clearTimeout(t);
-		count = 60;
-		timerOn = 0;
+		clearTimeout(game.t);
+		game.count = 60;
+		game.timerOn = 0;
 	}
 });
 
