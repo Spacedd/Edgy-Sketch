@@ -9,20 +9,18 @@ var connection = mysql.createConnection({
 function getWordSet(wordSetReq, cb) {
 
     var words = new Array();
-    connection.connect();
     connection.query('SELECT value from wordbank where wordbank.wordSet = ?', [wordSetReq], function (err, rows, fields) {
         if (!err) {
             var i;
-            for (i = 0; i < 5; i++) {
+            for (i = 0; i < rows.length; i++) {
                 words[words.length] = rows[i];
-            }            
+            }
         } else {
             console.log('Error while performing Query.');
         }
         cb(err, words);
     });
 
-    connection.end();
 }
 
 exports.getWordSet = getWordSet;

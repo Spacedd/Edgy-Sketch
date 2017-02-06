@@ -3,12 +3,18 @@
     <words>
       <w>chatroom</w>
       <w>clearbutton</w>
+      <w>crosshair</w>
       <w>dropdown</w>
       <w>gamerunning</w>
+      <w>getrect</w>
+      <w>googleapis</w>
+      <w>hidebox</w>
       <w>ismousedown</w>
+      <w>minified</w>
       <w>mousedown</w>
       <w>mouseisdown</w>
       <w>mousemove</w>
+      <w>mouseout</w>
       <w>mouseup</w>
       <w>newgame</w>
       <w>newmsg</w>
@@ -19,14 +25,18 @@
       <w>oldy</w>
       <w>penmode</w>
       <w>positon</w>
+      <w>rowcanvas</w>
       <w>sendmessage</w>
       <w>sendmssage</w>
       <w>setnick</w>
+      <w>showbox</w>
+      <w>socketid</w>
       <w>touchend</w>
       <w>touchmove</w>
       <w>touchstart</w>
       <w>userlist</w>
       <w>wordbank</w>
+      <w>wordset</w>
       <w>xlarge</w>
       <w>xpos</w>
       <w>ypos</w>

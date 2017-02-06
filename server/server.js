@@ -17,7 +17,8 @@ var game = {
 	round: 0,
 	drawer: null,
 	gamerunning: false,
-	count: 60,
+	startCount: 10,
+	count: this.startCount,
 	t: 0,
 	timerOn: 0
 };
@@ -167,18 +168,17 @@ io.on('connection', function(socket){
 				socket.emit('chat message', "You guessed the correct word!");
 				socket.broadcast.emit('chat message', "The word was guessed!");
 				user.score += game.count;
-				socket.emit('users', users);
-				socket.broadcast.emit('users', users);
-				socket.emit('globalWordToShow', game.currentWord);
-				socket.broadcast.emit('globalWordToShow', game.currentWord);
-				setTimeout(correctGuess, 5000);
+				io.emit('users', users);
+				io.emit('globalWordToShow', game.currentWord);
+				stopCount();
+				setTimeout(removeCurrentWord, 5000);
 			} else {
 				io.emit('chat message', msg);
 			}
 		}
 	});
 
-	var correctGuess = function(){
+	var removeCurrentWord = function(){
 		var index  = game.gameWords.indexOf(game.currentWord);
 		game.gameWords.splice(index, 1);
 		console.log(game.gameWords);
@@ -186,7 +186,7 @@ io.on('connection', function(socket){
 	};
 
     socket.on('draw', function(msg){
-		if(!game.gamerunning || socket == game.drawer){	//Doesn't allow you to draw if you are not the drawer when the game is running
+		if(!game.gamerunning && msg.mouse == "down" || socket == game.drawer && msg.mouse == "down"){	//Doesn't allow you to draw if you are not the drawer when the game is running
 			console.log("Draw msg received");
 			io.emit('draw', msg);
 		}
@@ -206,13 +206,12 @@ io.on('connection', function(socket){
         io.emit('users', users)
 	});
 
-	
+
 	socket.on('newgame', function(wordSet){
 		if (users.length > 1 ){
 			game.gamerunning = true;
 			console.log("Start game pressed, wordset = " + wordSet);
-			socket.emit('hidebox');
-			socket.broadcast.emit('hidebox');
+			io.emit('hidebox');
 			var currentWordSet = database.getWordSet(wordSet, function(err, words){
 				if (!err) {
 					for(var index = 0; index < words.length; index++){
@@ -232,7 +231,6 @@ io.on('connection', function(socket){
 	});
 
 	var newround = function(){
-		stopCount();
 		if (game.gameWords.length != 0){
 			game.drawer = socket;
 			game.round++;
@@ -250,11 +248,18 @@ io.on('connection', function(socket){
 		stopCount();
 		game.drawer = null;
 		game.currentWord = "";
-		var winner = calculateHighest();
-		socket.emit('chat message', "The game has ended. The winner was " + winner.name + " with a score of " + winner.score);
-		socket.broadcast.emit('chat message', "The game has ended. The winner was " + winner.name + " with a score of " + winner.score);
-		socket.emit('showbox');
-		socket.broadcast.emit('showbox');
+		var winners = calculateHighest();
+		if (winners.length == 1){
+			var message = "The game has ended. The winner was " + winners[0].name + " with a score of " + winners[0].score;
+			io.emit('chat message', message);
+		} else {
+			message = "The game has ended. It was a tie of " + winners[0].score + " points, between :";
+			for (var i = 0; i < winners.length; i++){
+				message += winners[i].name + ", ";
+			}
+			io.emit('chat message', message);
+		}
+		io.emit('resetElements');
 		game.gamerunning = false;
 		resetScores();
 	};
@@ -262,32 +267,35 @@ io.on('connection', function(socket){
 	var resetScores = function(){
 		for(var i = 0; i < users.length; i++){
 			users[i].score = 0;
-			socket.emit('users', users);
-			socket.broadcast.emit('users', users);
+			io.emit('users', users);
 		}
 	};
 
 	var calculateHighest = function(){
-		var highest = users[0];
+		var highest = users[0].score;
 		for(var i = 0; i < users.length; i++){
 			if (users[i].score > highest.score)
-				highest = users[i];
+				highest = users[i].score;
 		}
-		return highest
+		var winners = new Array();
+		for(i = 0; i < users.length; i++){
+			if(users[i].score == highest){
+				winners.push(users[i]);
+			}
+		}
+		return winners;
 	};
 
 	var timedCount = function(){
 		if (game.count !==0){
-			socket.emit('displayTime', "Time left: " + game.count);
-			socket.broadcast.emit('displayTime', "Time left: " + game.count);
+			io.emit('displayTime', "Time left: " + game.count);
 			game.count -= 1;
 			game.t = setTimeout(function(){
 				timedCount();
 			}, 1000);
 		} else {
-			socket.emit('chat message', "Time is up");
-			socket.broadcast.emit('chat message', "Time is up");
-			stopCount();
+			io.emit('chat message', "Time is up");
+			removeCurrentWord();
 			newround();
 		}
 	};
@@ -303,7 +311,7 @@ io.on('connection', function(socket){
 	var stopCount = function() {
 		console.log("Timer stopped");
 		clearTimeout(game.t);
-		game.count = 60;
+		game.count = game.startCount;
 		game.timerOn = 0;
 	}
 });

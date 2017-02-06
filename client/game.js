@@ -13,7 +13,7 @@ $(function () {
     var old = {x: 0, y: 0};
 
     var thickness = 5;
-    var colour = "#00000";
+    var colour = "#000000";
 
 
     // States what the pen will draw
@@ -25,41 +25,62 @@ $(function () {
     c.addEventListener("mousedown", doMouseDown, false);
     c.addEventListener("mouseup", doMouseUp, false);
     c.addEventListener("mousemove", doMouseMove, false);
-    
+    c.addEventListener("mouseout", onMouseOut, false);
+    c.addEventListener("getrect", getRect, false);
+
 
     // Variable which later decides whether to draw or not
     var ismousedown = false;
+
     
+    // Sets coordinates based on the relative size of the canvas
+    function getRect(event){
+      var rect = c.getBoundingClientRect();
+      var width = (rect.right - rect.left);
+      var height = (rect.bottom - rect.top);
+      var x = event.clientX - rect.left;
+      var y = event.clientY - rect.top;
+      return {w: width, h: height, x: x, y: y};
+    }
+
 
     // Grabs the x and y coordinates of the mousedown position
-    function doMouseDown(event) {
+    function doMouseDown(event){
+        var rect = getRect(event);
+        startX = rect.x * (c.width/rect.w);
+        startY = rect.y * (c.height/rect.h);
+        console.log(startX, startY);
         ismousedown = true;
-        startX = event.pageX - ctx.canvas.offsetLeft;
-        startY = event.pageY - ctx.canvas.offsetTop;
     }
 
-    
+
     // Grabs the x and y coordinates of the mouseup position and then sends an emit to the function draw
-    function doMouseUp(event) {
+    function doMouseUp(event){
         ismousedown = false;
-        endX = event.pageX - ctx.canvas.offsetLeft;
-        endY = event.pageY - ctx.canvas.offsetTop;
-        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
+        var rect = getRect(event);
+        endX = rect.x * (c.width/rect.w);
+        endY = rect.y * (c.height/rect.h);
+        socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness, mouse: "up"});
     }
 
-    
+
     // Allows the pen to draw freely, not in straight lines, by setting the position it has just been as the
     // beginning of the "line"
-    function doMouseMove(event) {
-        if (ismousedown) {
-            endX = event.pageX - ctx.canvas.offsetLeft;
-            endY = event.pageY - ctx.canvas.offsetTop;
-            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness});
+    function doMouseMove(event){
+        if (ismousedown){
+            var rect = getRect(event);
+            endX = rect.x * (c.width/rect.w);
+            endY = rect.y * (c.height/rect.h);
+            socket.emit('draw', {endX: endX, endY: endY, startX: startX, startY: startY, colour: colour, thickness: thickness, mouse: "down"});
             startX = endX;
             startY = endY;
         }
     }
-  
+
+    function onMouseOut(){
+        ismousedown = false;
+    }
+
 
     // When erase is selected the pen is set to white, the thickness is corrected and the sliders are disabled
     $("#erases").on('click', function() {
@@ -88,8 +109,7 @@ $(function () {
         max: 30,
         value: thickness,
         slide: refreshSize,
-        change: refreshSize,
-        //create: refreshSize
+        change: refreshSize
     });
 
 
@@ -134,9 +154,7 @@ $(function () {
         max: 255,
         value: 1,
         slide: refreshColour,
-        change: refreshColour,
-        //create: refreshColour
-
+        change: refreshColour
     });
 
 
@@ -156,30 +174,12 @@ $(function () {
            if (users[i]){
                var message = document.createElement('li');
                message.setAttribute('class', 'users');
-               message.innerHTML = users[i].name;
+               message.innerHTML = users[i].name + " [" + users[i].score + "]";
                messageArea.append(message);
                message.scrollIntoView(false);
            }
        }
     });
-
-  
-    // Prevent scrolling when touching the canvas on moblie
-    document.body.addEventListener("touchdown", function (event) {
-        if (event.target == c) {
-            event.preventDefault();
-        }
-    }, false);
-    document.body.addEventListener("touchend", function (event) {
-        if (event.target == c) {
-            event.preventDefault();
-        }
-    }, false);
-    document.body.addEventListener("touchmove", function (event) {
-        if (event.target == c) {
-            event.preventDefault();
-        }
-    }, false);
 
 
     // Draws the line with the function 'stroke', moves to the start coordinates and draws a line to the end ones
@@ -192,13 +192,8 @@ $(function () {
         ctx.lineWidth = msg.thickness;
         ctx.stroke();
         old = msg;
-    /*    if($("#erases").checked = true){
-            refreshSize()
-        }else{
-            refreshColour();
-            refreshSize();
-        } */
     });
+
 
     //  Replaces the canvas with a white rectangle, aka clearing it
     ctx.clear = function () {
@@ -259,23 +254,32 @@ $(function () {
             $box.prop("checked", false);
         }
     });
+    
 
-    var selected = document.getElementById('dropbox');
-
-   
     $('#startGame').on('click', function(){
-        //getWordSet("easy");
-        socket.emit('newgame');
-        socket.emit('clear');
+        var wordSet = $("#wordSetDropBox").val();
+        if (wordSet !== "Default"){
+            socket.emit('newgame', wordSet);
+            socket.emit('clear');
+        } else {
+            alert("Select a wordset before starting the game!");
+        }
     });
+
 
     socket.on('hidebox', function(){
         document.getElementById("startGame").disabled = true;
     });
-    
+
+    socket.on('resetElements', function(){
+        document.getElementById('startGame').disabled = false;
+        document.getElementById('displayTime').innerHTML = "";
+        document.getElementById('wordDisplay').innerHTML = "";
+    });
+
 
    socket.on('current word', function(wordToGuess){
-        messageCreation("The word you need to draw is : " + wordToGuess)
+        document.getElementById('wordDisplay').innerHTML = ("Draw the word: " + wordToGuess);
     });
 
     socket.on('game start', function(round, currentWordLength){
@@ -285,8 +289,17 @@ $(function () {
             messageCreation("Round : " + round);
         }
         socket.emit('clear');
-        messageCreation("The word is  " + currentWordLength + " letters long");
+        document.getElementById('wordDisplay').innerHTML = "Word : " + wordToUnderscore(currentWordLength);
     });
+
+
+    function wordToUnderscore(currentWordLength){
+        var underscore = "";
+        for (var i = 0; i < currentWordLength; i ++){
+            underscore += "_ ";
+        }
+        return underscore;
+    }
 
 
     function messageCreation(text){
@@ -297,8 +310,15 @@ $(function () {
         messageArea.append(message);
         message.scrollIntoView(false);
     }
-   
 
+    socket.on('displayTime', function(msg){
+        document.getElementById('displayTime').innerHTML = msg;
+    });
+
+
+    socket.on('globalWordToShow', function(msg){
+        document.getElementById('wordDisplay').innerHTML = "The word was '" + msg + "'";
+    });
 
 
     function ROOM(){

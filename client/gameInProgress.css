@@ -1,0 +1,16 @@
+body{
+    font-family: "Trebuchet MS", cursive, sans-serif;
+    background-image: url("./media/poly-bg.png");
+}
+
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.title{
+    font-size: 30;
+    font-weight: bold;
+    text-align: center;
+}

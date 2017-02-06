@@ -1,0 +1,11 @@
+when user refreshes they connect as a new user 
+
+if there is another user on the website, the joining users' pen colour is set to what ever the first user's colour is
+
+disconnect returns "transport close" or "ping timeout" instead of user's name
+
+disconnects happen if afk for short period of time
+
+lag means user cannot do anything until refresh
+
+if mouse leaves canvas area stop drawing
