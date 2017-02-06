@@ -17,8 +17,8 @@ var game = {
 	round: 0,
 	drawer: null,
 	gamerunning: false,
-	startCount: 10,
-	count: this.startCount,
+	startCount: 5,
+	count: 0,
 	t: 0,
 	timerOn: 0
 };
@@ -128,14 +128,25 @@ app.get('/login/facebook/return',
 
 io.on('connection', function(socket){
 
+
     var user = {name: "unknown", score: 0, socketid: socket.id};
 
     socket.on('Newuser', function(msg){
+		keepAlive();
         console.log("User connected : " + msg);
         user.name = msg;
         users[users.length] = user;
         io.emit('users', users);
     });
+
+	socket.on('keepAlive', function(){
+		setTimeout(keepAlive, 2000);
+		console.log("stayin' alive:" + user.name)
+	});
+
+	function keepAlive(){
+		socket.emit("keepAlive");
+	}
 
 	socket.on('disconnect', function(msg){
 		console.log('User disconnected:' + user.name);
@@ -159,30 +170,33 @@ io.on('connection', function(socket){
 
     socket.on('chat message', function(msg){
 		console.log("message: " + msg);
-		var newmsg;
-		newmsg = msg.substring(msg.indexOf(":") + 1);
-		if(socket == game.drawer) {
-			socket.emit('chat message', "You can not speak whist drawing");
-		} else {
-			if(newmsg === game.currentWord){
-				socket.emit('chat message', "You guessed the correct word!");
-				socket.broadcast.emit('chat message', "The word was guessed!");
-				user.score += game.count;
-				io.emit('users', users);
-				io.emit('globalWordToShow', game.currentWord);
-				stopCount();
-				setTimeout(removeCurrentWord, 5000);
+		var newmsg = msg.substring(msg.indexOf(":") + 1);
+		if (game.gamerunning){
+			if(socket == game.drawer) {
+				socket.emit('chat message', "You can not speak whist drawing");
 			} else {
-				io.emit('chat message', msg);
+				if(newmsg.toLowerCase() === game.currentWord.toLowerCase()){
+					socket.emit('chat message', "You guessed the correct word!");
+					socket.broadcast.emit('chat message', "The word was guessed!");
+					user.score += game.count;
+					io.emit('users', users);
+					io.emit('globalWordToShow', game.currentWord);
+					stopCount();
+					setTimeout(removeCurrentWord, 5000);
+					setTimeout(newround, 6000);
+				} else {
+					io.emit('chat message', msg);
+				}
 			}
+		} else {
+			io.emit('chat message', msg);
 		}
-	});
+});
 
 	var removeCurrentWord = function(){
 		var index  = game.gameWords.indexOf(game.currentWord);
 		game.gameWords.splice(index, 1);
 		console.log(game.gameWords);
-		newround();
 	};
 
     socket.on('draw', function(msg){
@@ -274,7 +288,7 @@ io.on('connection', function(socket){
 	var calculateHighest = function(){
 		var highest = users[0].score;
 		for(var i = 0; i < users.length; i++){
-			if (users[i].score > highest.score)
+			if (users[i].score > highest)
 				highest = users[i].score;
 		}
 		var winners = new Array();
@@ -287,16 +301,18 @@ io.on('connection', function(socket){
 	};
 
 	var timedCount = function(){
-		if (game.count !==0){
-			io.emit('displayTime', "Time left: " + game.count);
+		io.emit('displayTime', "Time left: " + game.count);
+		if (game.count > 0){
 			game.count -= 1;
 			game.t = setTimeout(function(){
 				timedCount();
 			}, 1000);
 		} else {
-			io.emit('chat message', "Time is up");
-			removeCurrentWord();
-			newround();
+			io.emit('chat message', "Time is up, no one guessed the word!");
+			stopCount();
+			io.emit('globalWordToShow', game.currentWord);
+			setTimeout(removeCurrentWord, 5000);
+			setTimeout(newround, 6000);
 		}
 	};
 
@@ -304,6 +320,7 @@ io.on('connection', function(socket){
 		console.log("Timer started");
 		if (!game.timerOn){
 			game.timerOn = 1;
+			game.count = game.startCount;
 			timedCount();
 		}
 	};
@@ -311,7 +328,6 @@ io.on('connection', function(socket){
 	var stopCount = function() {
 		console.log("Timer stopped");
 		clearTimeout(game.t);
-		game.count = game.startCount;
 		game.timerOn = 0;
 	}
 });

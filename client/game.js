@@ -1,5 +1,5 @@
 $(function () {
-    var socket = io();
+    var socket = io();   
 
     // Creates the canvas and gives it the element draw
     var c = document.getElementById("draw");
@@ -49,7 +49,6 @@ $(function () {
         var rect = getRect(event);
         startX = rect.x * (c.width/rect.w);
         startY = rect.y * (c.height/rect.h);
-        console.log(startX, startY);
         ismousedown = true;
     }
 
@@ -192,6 +191,10 @@ $(function () {
         ctx.lineWidth = msg.thickness;
         ctx.stroke();
         old = msg;
+    });
+    
+    socket.on('keepAlive', function(){
+        socket.emit('keepAlive');
     });
 
 
