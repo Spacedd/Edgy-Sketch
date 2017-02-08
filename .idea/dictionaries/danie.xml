@@ -4,12 +4,15 @@
       <w>chatroom</w>
       <w>clearbutton</w>
       <w>crosshair</w>
+      <w>dirname</w>
       <w>dropdown</w>
+      <w>edgysketch</w>
       <w>gamerunning</w>
       <w>getrect</w>
       <w>googleapis</w>
       <w>hidebox</w>
       <w>ismousedown</w>
+      <w>messagearea</w>
       <w>minified</w>
       <w>mousedown</w>
       <w>mouseisdown</w>
@@ -25,6 +28,7 @@
       <w>oldy</w>
       <w>penmode</w>
       <w>positon</w>
+      <w>resave</w>
       <w>rowcanvas</w>
       <w>sendmessage</w>
       <w>sendmssage</w>
