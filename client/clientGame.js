@@ -17,29 +17,21 @@ $(function () {
 
 
                             // CANVAS EVENTS //
-    
+
 
     // States what the pen will draw
     ctx.fillStyle = "solid";
     ctx.lineCap = "round";
 
-
-    // Adds the listeners for the canvas for when the mouse goes up, down or just moves
-    c.addEventListener("mousedown", doMouseDown, false);
-    c.addEventListener("mouseup", doMouseUp, false);
-    c.addEventListener("mousemove", doMouseMove, false);
-    c.addEventListener("mouseout", onMouseOut, false);
-    c.addEventListener("getrect", getPos, false);
-
     // Variable which later decides whether to draw or not
     var ismousedown = false;
 
-    function getPos(event){
+    function getPos(clientX,clientY){
         var rect = c.getBoundingClientRect();
         var width = (rect.right - rect.left);
         var height = (rect.bottom - rect.top);
-        var originalX = event.clientX - rect.left;
-        var originalY = event.clientY - rect.top;
+        var originalX = clientX - rect.left;
+        var originalY = clientY - rect.top;
         var x = originalX * (c.width/width);
         var y = originalY * (c.height/height);
         return {x: x, y: y};
@@ -47,24 +39,36 @@ $(function () {
 
     // Grabs the x and y coordinates of the mousedown position
     function doMouseDown(event){
-        startPos = getPos(event);
+        startPos = getPos(event.clientX, event.clientY);
         ismousedown = true;
     }
 
     // Grabs the x and y coordinates of the mouseup position and then sends an emit to the function draw
     function doMouseUp(event){
         ismousedown = false;
-        endPos = getPos(event);
+        endPos = getPos(event.clientX, event.clientY);
         socket.emit('draw', {end: endPos, start: startPos, colour: colour, thickness: thickness, mouse: "up"});
     }
 
     // Allows the pen to draw freely, by setting the position it has just been as the beginning of the "line"
     function doMouseMove(event){
         if (ismousedown){
-            endPos = getPos(event);
+            endPos = getPos(event.clientX, event.clientY);
             socket.emit('draw', {end: endPos, start: startPos, colour: colour, thickness: thickness, mouse: "down"});
             startPos = endPos;
         }
+    }
+
+    function doTouchDown(event){
+        event.preventDefault();
+        startPos = getPos(event.targetTouches[0].pageX, event.targetTouches[0].pageY);
+    }
+
+    function doTouchMove(event){
+        event.preventDefault();
+        endPos = getPos(event.targetTouches[0].pageX, event.targetTouches[0].pageY);
+        socket.emit('draw', {end: endPos, start: startPos, colour: colour, thickness: thickness, mouse: "down"});
+        startPos = endPos;
     }
 
     function onMouseOut(){
@@ -72,7 +76,16 @@ $(function () {
     }
 
 
-                            // DRAWING OPTIONS //
+    // Adds the listeners for the canvas for when the mouse goes up, down or just moves
+    c.addEventListener("mousedown", doMouseDown, false);
+    c.addEventListener("mouseup", doMouseUp, false);
+    c.addEventListener("mousemove", doMouseMove, false);
+    c.addEventListener("mouseout", onMouseOut, false);
+    c.addEventListener("touchstart", doTouchDown, false);
+    c.addEventListener("touchmove", doTouchMove, false);
+
+
+                            // DRAWING EVENTS //
     
 
     // When the pen is selected the colour is refreshed, the thickness is corrected and the sliders are enabled
@@ -167,19 +180,12 @@ $(function () {
     });
 
     
-                            // MESSAGING OPTIONS //
-    
+                            // MESSAGING EVENTS //
+
 
     // The message is passed through as a string and this outputs it into the messagearea
     function messageCreation(text, property){
-        var message = document.createElement('div');
-       /*var colour;
-        if(property === "server") {
-            colour = "red";
-        } else {
-            colour = "black";
-        }*/        
-        //text = "<span style = 'color:" + colour + ";'>" + text + "</span>";
+        var message = document.createElement('div');       
         message.setAttribute('class', property);
         message.innerHTML = text;
         var messageArea = $('.chat-messages');
@@ -256,13 +262,12 @@ $(function () {
         ctx.clear();
     });
 
-    socket.on('game startPos', function(round, currentWordLength){
+    socket.on('game start', function(round, currentWordLength){
         if (round === 1) {
-            socket.emit('chat message', "The game is afoot", "server");
-        }else{
-            socket.emit('chat message', "Round : " + round, "server");
-        }
-        socket.emit('clear');
+            messageCreation("The game is afoot", "server");
+        }else {
+            messageCreation("Round : " + round, "server");
+        }        
         document.getElementById('wordDisplay').innerHTML = "Word : " + wordToUnderscore(currentWordLength);
     });
 

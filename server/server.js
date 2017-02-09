@@ -8,23 +8,12 @@ var http = require('http').Server(app);
 var favicon = require('serve-favicon');
 var passport = require('passport');
 var Strategy = require('passport-facebook').Strategy;
-var io = require('socket.io')(http, {'pingInterval': 1000, 'pingTimeout': 3000});
+var io = require('socket.io')(http);//, {'pingInterval': 5000, 'pingTimeout': 11000});
 var mustacheExpress	= require('mustache-express');
-var users = [];
 var database = require ("./database.js");
-
-var game = {
-	gameWords: [],
-	currentWord: "",
-	round: 0,
-	drawer: null,
-	gamerunning: false,
-	startCount: 30,
-	count: 0,
-	t: 0,
-	timerOn: 0
-};
-
+var Game = require("./serverGame.js");
+					var game = new Game();
+					
 // Says what port to listen to incoming data on
 const PORT=80;
 
@@ -99,7 +88,7 @@ app.get('/login/guest',
 	function(req, res){
 		if (game.gamerunning != true) {
 			res.render('../client/game.html', {
-				username: "Guest" + (users.length)
+				username: "Guest" + (game.users.length)
 			});
 		} else {
 			res.redirect("../gameInProgress.html");
@@ -131,22 +120,18 @@ io.on('connection', function(socket){
     socket.on('Newuser', function(msg){
         console.log("User connected : " + msg);
         user.name = msg;
-        users[users.length] = user;
-        io.emit('users', users);
+        game.users[game.users.length] = user;
+        io.emit('users', game.users);
     });
 
 	socket.on('disconnect', function(){
 		console.log('User disconnected:' + user.name);
-		var index = users.indexOf(user);
-		users.splice(index, 1);
-		if ((game.gamerunning && users.length < 2)||socket == game.drawer){
+		var index = game.users.indexOf(user);
+		game.users.splice(index, 1);
+		if ((game.gamerunning && game.users.length < 2)||socket == game.drawer){
 			stopGame();
 		}
-		io.emit('users', users);
-	});
-
-    socket.on('Enter', function(){
-		console.log("Enter pressed");
+		io.emit('users', game.users);
 	});
 
     socket.on('chat message', function(msg, property){
@@ -157,14 +142,15 @@ io.on('connection', function(socket){
 				socket.emit('chat message', "You can not speak whist drawing", property);
 			} else {
 				if(newmsg.toLowerCase() === game.currentWord.toLowerCase()){
+					io.emit('chat message', msg, "correctGuess");
 					socket.emit('chat message', "You guessed the correct word!", property);
 					socket.broadcast.emit('chat message', "The word was guessed!", property);
 					user.score += game.count;
-					io.emit('users', users);
+					io.emit('users', game.users);
 					io.emit('globalWordToShow', game.currentWord);
 					stopCount();
-					setTimeout(removeCurrentWord, 5000);
-					setTimeout(newround, 6000);
+					setTimeout(removeCurrentWord, 1000);
+					setTimeout(newround, 2000);
 				} else {
 					io.emit('chat message', msg, property);
 				}
@@ -192,18 +178,18 @@ io.on('connection', function(socket){
 		console.log("Nickname changed to: " + msg);
 		io.emit('nickname', msg);
         user.name = msg;
-        io.emit('users', users)
+        io.emit('users', game.users)
 	});
 
 	socket.on('newgame', function(wordSet){
-		if (users.length > 1 ){
+		if (game.users.length > 1 ){
 			game.gamerunning = true;
 			console.log("Start game pressed, wordset = " + wordSet);
 			io.emit('hidebox');
 			var currentWordSet = database.getWordSet(wordSet, function(err, words){
 				if (!err) {
 					for(var index = 0; index < words.length; index++){
-						game.gameWords[index]=words[index].value;
+						game.gameWords[index] = words[index].value;
 					}
 					console.log(game.gameWords);
 					game.round = 0;
@@ -225,9 +211,7 @@ io.on('connection', function(socket){
 	function newround(){
 		io.emit('clear');
 		if (game.gameWords.length != 0){
-			game.drawer = socket;
-			game.round++;
-			game.currentWord = game.gameWords[Math.floor(Math.random()*game.gameWords.length)];
+			game.newRound(socket);
 			socket.emit('current word', game.currentWord);
 			socket.broadcast.emit('game start', game.round, game.currentWord.length);
 			startCount();
@@ -278,7 +262,7 @@ io.on('connection', function(socket){
 		stopCount();
 		game.drawer = null;
 		game.currentWord = "";
-		var winners = calculateHighest();
+		var winners = game.calculateHighest();
 		if (winners.length == 1){
 			var message = "The game has ended. The winner was " + winners[0].name + " with a score of " + winners[0].score;
 			io.emit('chat message', message, "server");
@@ -291,33 +275,11 @@ io.on('connection', function(socket){
 		}
 		io.emit('resetElements');
 		game.gamerunning = false;
-		resetScores();
-	}
-
-	function resetScores(){
-		for(var i = 0; i < users.length; i++){
-			users[i].score = 0;
-			io.emit('users', users);
-		}
-	}
-
-	function calculateHighest(){
-		var highest = users[0].score;
-		for(var i = 0; i < users.length; i++){
-			if (users[i].score > highest) {
-				highest = users[i].score;
-			}
-		}
-		var winners = [];
-		for(i = 0; i < users.length; i++){
-			if(users[i].score == highest){
-				winners.push(users[i]);
-			}
-		}
-		return winners;
+		game.resetScores();
+		io.emit('users', game.users);
 	}
 });
 
-http.listen(PORT, function(){
+	http.listen(PORT, function(){
 	console.log("Listening on port ", PORT);
 });
