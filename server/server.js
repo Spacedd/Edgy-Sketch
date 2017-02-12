@@ -1,4 +1,4 @@
-					// VARIABLE INITIALIZATION //
+// VARIABLE INITIALIZATION //
 
 //loads the packages needed
 
@@ -12,7 +12,7 @@ var io = require('socket.io')(http);//, {'pingInterval': 5000, 'pingTimeout': 11
 var mustacheExpress	= require('mustache-express');
 var database = require ("./database.js");
 var Game = require("./serverGame.js");
-					var game = new Game();
+var game = new Game();
 					
 // Says what port to listen to incoming data on
 const PORT=80;
@@ -62,7 +62,6 @@ passport.deserializeUser(function(obj, cb) {
 app.use(express.static('client'));
 app.use(require('morgan')('combined'));
 app.use(require('cookie-parser')());
-//app.use(require('body-parser').urlencoded({ extended: true }));
 app.use(require('express-session')({ secret: 'edgysketch', resave: true, saveUninitialized: true }));
 
 // Initialize Passport and restore authentication state, if any, from the session.
@@ -111,21 +110,25 @@ app.get('/login/facebook/return',
 // When the app listens it logs where it is listening to
 io.on('connection', function(socket){
 
-	var user = {name: "unknown", score: 0, socketid: socket.id};
+	var user = {
+		name: "unknown",
+		score: 0,
+		socketid: socket.id
+	};
 
 	
 					// SOCKETS //
 
 	
     socket.on('Newuser', function(msg){
-        console.log("User connected : " + msg);
+        console.log("User connected    : " + msg);
         user.name = msg;
         game.users[game.users.length] = user;
         io.emit('users', game.users);
     });
 
 	socket.on('disconnect', function(){
-		console.log('User disconnected:' + user.name);
+		console.log("User disconnected : " + user.name);
 		var index = game.users.indexOf(user);
 		game.users.splice(index, 1);
 		if ((game.gamerunning && game.users.length < 2)||socket == game.drawer){
@@ -139,18 +142,10 @@ io.on('connection', function(socket){
 		var newmsg = msg.substring(msg.indexOf(":") + 1);
 		if (game.gamerunning){
 			if(socket == game.drawer) {
-				socket.emit('chat message', "You can not speak whist drawing", property);
+				socket.emit('chat message', "You can not speak whist drawing", 'server');
 			} else {
 				if(newmsg.toLowerCase() === game.currentWord.toLowerCase()){
-					io.emit('chat message', msg, "correctGuess");
-					socket.emit('chat message', "You guessed the correct word!", property);
-					socket.broadcast.emit('chat message', "The word was guessed!", property);
-					user.score += game.count;
-					io.emit('users', game.users);
-					io.emit('globalWordToShow', game.currentWord);
-					stopCount();
-					setTimeout(removeCurrentWord, 1000);
-					setTimeout(newround, 2000);
+					correctGuess(msg, property);
 				} else {
 					io.emit('chat message', msg, property);
 				}
@@ -158,11 +153,22 @@ io.on('connection', function(socket){
 		} else {
 			io.emit('chat message', msg, property);
 		}
-}	);
+	});
+
+	function correctGuess(msg, property){
+		io.emit('chat message', msg, 'correctGuess');
+		socket.emit('chat message', "You guessed the correct word!", property);
+		socket.broadcast.emit('chat message', "The word was guessed!", property);
+		user.score += game.count;
+		io.emit('users', game.users);
+		io.emit('globalWordToShow', game.currentWord);
+		stopCount();
+		setTimeout(removeCurrentWord, 1000);
+		setTimeout(newround, 2000);
+	}
 
 	socket.on('draw', function(msg){
-		if(!game.gamerunning && msg.mouse == "down" || socket == game.drawer && msg.mouse == "down"){	//Doesn't allow you to draw if you are not the drawer when the game is running
-			console.log("Draw msg received");
+		if(!game.gamerunning && msg.mouse == 'down' || socket == game.drawer && msg.mouse == 'down'){	//Doesn't allow you to draw if you are not the drawer when the game is running
 			io.emit('draw', msg);
 		}
 	});
@@ -184,7 +190,7 @@ io.on('connection', function(socket){
 	socket.on('newgame', function(wordSet){
 		if (game.users.length > 1 ){
 			game.gamerunning = true;
-			console.log("Start game pressed, wordset = " + wordSet);
+			console.log("Start game pressed, wordset : " + wordSet);
 			io.emit('hidebox');
 			var currentWordSet = database.getWordSet(wordSet, function(err, words){
 				if (!err) {
@@ -200,7 +206,7 @@ io.on('connection', function(socket){
 				}
 			});
 		} else {
-			socket.emit('chat message', "There must be at least two people to play a game.", "server");
+			socket.emit('chat message', "There must be at least two people to play a game.", 'server');
 		}
 	});
 
@@ -228,7 +234,7 @@ io.on('connection', function(socket){
 				timedCount();
 			}, 1000);
 		} else {
-			io.emit('chat message', "Time is up, no one guessed the word!", "server");
+			io.emit('chat message', "Time is up, no one guessed the word!", 'server');
 			stopCount();
 			io.emit('globalWordToShow', game.currentWord);
 			setTimeout(removeCurrentWord, 5000);
@@ -265,17 +271,17 @@ io.on('connection', function(socket){
 		var winners = game.calculateHighest();
 		if (winners.length == 1){
 			var message = "The game has ended. The winner was " + winners[0].name + " with a score of " + winners[0].score;
-			io.emit('chat message', message, "server");
+			io.emit('chat message', message, 'server');
 		} else {
 			message = "The game has ended. It was a tie of " + winners[0].score + " points, between :";
 			for (var i = 0; i < winners.length; i++){
 				message += winners[i].name + ", ";
 			}
-			io.emit('chat message', message, "server");
+			io.emit('chat message', message, 'server');
 		}
-		io.emit('resetElements');
 		game.gamerunning = false;
 		game.resetScores();
+		io.emit('resetElements');
 		io.emit('users', game.users);
 	}
 });

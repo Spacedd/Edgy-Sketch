@@ -1,5 +1,4 @@
-
-
+// Game class which controls the game and all the separate functions
 
 function Game(){
     this.gameWords = [];
@@ -13,6 +12,12 @@ function Game(){
     this.timerOn = 0;
     this.users = [];
 }
+
+Game.prototype.newRound = function(socket){
+    this.drawer = socket;
+    this.round++;
+    this.currentWord = this.gameWords[Math.floor(Math.random()*this.gameWords.length)];
+};
 
 Game.prototype.calculateHighest = function(){
     var highest = this.users[0].score;
@@ -36,11 +41,5 @@ Game.prototype.resetScores = function(){
     }
 };
 
-Game.prototype.newRound = function(socket){
-    this.drawer = socket;
-    this.round++;
-    this.currentWord = this.gameWords[Math.floor(Math.random()*this.gameWords.length)];
-};
-
-
+// Exports the functions back in to the variable Game from server.js
 module.exports= Game;
