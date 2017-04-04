@@ -13,7 +13,7 @@ $(function () {
     var startPos;
     var endPos;
     var thickness = 5;
-    var colour = '000000';
+    var colour = '#000000';
 
 
                             // CANVAS EVENTS //

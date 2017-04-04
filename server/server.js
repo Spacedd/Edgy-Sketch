@@ -2,17 +2,17 @@
 
 //loads the packages needed
 
-var express = require('express');
-var app = express();
-var http = require('http').Server(app);
-var favicon = require('serve-favicon');
-var passport = require('passport');
-var Strategy = require('passport-facebook').Strategy;
-var io = require('socket.io')(http);//, {'pingInterval': 5000, 'pingTimeout': 11000});
-var mustacheExpress	= require('mustache-express');
-var database = require ("./database.js");
-var Game = require("./serverGame.js");
-var game = new Game();
+var express 			= require('express');
+var app 				= express();
+var http				= require('http').Server(app);
+var favicon 			= require('serve-favicon');
+var passport 			= require('passport');
+var Strategy 			= require('passport-facebook').Strategy;
+var io 					= require('socket.io')(http);
+var mustacheExpress		= require('mustache-express');
+var database 			= require ("./database.js");
+var Game				= require("./serverGame.js");
+var game 				= new Game();
 					
 // Says what port to listen to incoming data on
 const PORT=80;

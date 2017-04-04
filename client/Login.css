@@ -1,0 +1,9 @@
+body {
+    font-family: "lucida grande", tahoma, verdana, arial, sans-serif;
+    background-image: url("./media/poly-bg.png");
+}
+
+.w3-theme-l1 {
+    background-color: #3b5998 !important;
+    color: white;
+}
